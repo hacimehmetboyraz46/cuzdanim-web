@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="tr"><head><meta charset="utf-8">
+<html lang="tr"><head>
+<script>try{if(localStorage.getItem("cuzdanim_theme")==="patron")document.documentElement.classList.add("t-patron")}catch(e){}</script>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cüzdanım — Kişisel Finans Takibi</title>
 <style>
@@ -273,7 +275,7 @@ body.wide .kbar{position:static;flex-direction:row;width:auto;margin:0 0 14px}
   if(n==="db")return {doc:function(p){return db.doc(p)}};
   return {id:async function(){return u.uid}};
  }};
- window.cuzdanimCikis=function(){var u=auth.currentUser;if(!confirm(u?"Çıkış yapılsın mı? Verilerin hesabında güvende, tekrar girişte geri gelir.":"Giriş ekranı açılsın mı?"))return;auth.signOut().then(function(){if(u){["cuzdanim","yatirim-takip-v2","yatirim-takip-v1","cuzdanim_lastacc","cuzdanim_cc","cuzdanim_undo","cuzdanim_pin"].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}})}location.reload()})};
+ window.cuzdanimCikis=function(){var u=auth.currentUser;if(!confirm(u?"Çıkış yapılsın mı? Verilerin hesabında güvende, tekrar girişte geri gelir.":"Giriş ekranı açılsın mı?"))return;auth.signOut().then(function(){if(u){["cuzdanim","yatirim-takip-v2","yatirim-takip-v1","cuzdanim_lastacc","cuzdanim_cc","cuzdanim_undo","cuzdanim_pin","cuzdanim_bio"].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}})}location.reload()})};
 })();
 </script>
 <script>
@@ -2535,6 +2537,550 @@ ciz();
   }catch(e){durum("Sadece bu cihazda kayıtlı")}
 })();
 
+})();
+</script>
+<style>
+#pgR .card{margin-bottom:14px}
+#pgR h3{font-size:13px;margin:16px 0 8px;color:var(--mu)}
+.rbar{height:10px;border-radius:6px;background:var(--in);overflow:hidden}
+.rbar>i{display:block;height:100%}
+.rrow{margin:10px 0;font-size:13px}
+.rtop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.rbtn{background:var(--pl2);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;font-size:13px;margin:4px 6px 4px 0;color:var(--tx)}
+.rinp{padding:7px 8px;border:1px solid var(--bd);border-radius:8px;background:var(--in);font-size:14px;color:var(--tx)}
+#remBar{display:none;margin:0 0 12px;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:700;background:#fff4d6;color:#7a4b00;border:1px solid #e0b24a}
+@media print{body.printR .w>*:not(#pgR){display:none!important}body.printR .noprint{display:none!important}}
+</style>
+<script>
+(function(){
+const g=id=>document.getElementById(id),PAL=["#3d7bff","#9b30ff","#ff9d00","#e53935","#22c55e","#06b6d4","#ec4899","#84cc16","#f59e0b","#64748b"];
+let rM=null;
+const inM=(t,y,m)=>t.date&&+t.date.slice(0,4)===y&&+t.date.slice(5,7)===m+1;
+const sum=(y,m,k)=>S.tx.filter(t=>t.kind===k&&inM(t,y,m)).reduce((a,t)=>a+(+t.amt||0),0);
+const catsOf=(y,m)=>{const c={};S.tx.filter(t=>t.kind==="gider"&&inM(t,y,m)).forEach(t=>{const k=t.cat||"Diğer";c[k]=(c[k]||0)+(+t.amt||0)});return c};
+const todayS=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
+// yaklaşan ödemeler: son ödeme günü = gün alanındaki son sayı
+function dueList(days){const out=[];if(!S.pay||!S.pay.items)return out;const n=new Date(),Y=n.getFullYear(),M=n.getMonth(),t0=new Date(Y,M,n.getDate()),last=new Date(Y,M+1,0).getDate();
+ S.pay.items.forEach(it=>{const nums=String(it.day||"").match(/\d+/g);if(!nums)return;const d=Math.min(+nums[nums.length-1],last),c=S.pay.cells[Y+"|"+it.id+"|"+M];if(!c||!(c.a>0)||c.p)return;const diff=Math.round((new Date(Y,M,d)-t0)/864e5);if(diff<=days)out.push({n:it.name,a:c.a,diff})});
+ return out.sort((a,b)=>a.diff-b.diff)}
+const dtxt=x=>x.diff<0?"gecikti":x.diff===0?"bugün":x.diff+" gün kaldı";
+function bar(){try{const w=g("pgW");if(!w)return;let b=g("remBar");if(!b){b=document.createElement("div");b.id="remBar";w.insertBefore(b,w.firstChild)}
+ const rd=S.remDays===undefined?3:+S.remDays,d=dueList(rd),p=d.map(x=>"⏰ "+x.n+" · "+fmt(x.a)+" · "+dtxt(x));
+ const n=new Date(),B=S.budget||{},cs=catsOf(n.getFullYear(),n.getMonth());
+ Object.keys(B).forEach(k=>{const s=cs[k]||0;if(B[k]>0&&s>=B[k]*.8)p.push((s>=B[k]?"🚨 Bütçe aşıldı: ":"⚠️ Bütçeye yaklaştı: ")+k+" · "+fmt(s)+" / "+fmt(B[k]))});
+ if(!p.length){b.style.display="none";return}
+ b.style.display="block";b.innerHTML=p.join("<br>");
+ if(d.length&&"Notification" in window&&Notification.permission==="granted"&&localStorage.getItem("cuzdanim_notif")!==todayS()){localStorage.setItem("cuzdanim_notif",todayS());new Notification("Cüzdanım · Yaklaşan ödeme",{body:d.map(x=>x.n+" "+fmt(x.a)+" ("+dtxt(x)+")").join(", ")})}
+ }catch(e){}}
+function renderR(){const root=g("pgR");if(!root)return;if(rM===null)rM=month;
+ const Y=year,mv=AY.map((_,m)=>[sum(Y,m,"gelir"),sum(Y,m,"gider")]),W=640,H=210,pl=8,bw=(W-2*pl)/12,mx=Math.max(1,...mv.flat());
+ let c1=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
+ mv.forEach((v,i)=>{const x=pl+i*bw,h1=v[0]/mx*(H-40),h2=v[1]/mx*(H-40);c1+=`<rect x="${x+4}" y="${H-24-h1}" width="${bw/2-5}" height="${h1}" rx="2" fill="#0f8a63"/><rect x="${x+bw/2}" y="${H-24-h2}" width="${bw/2-5}" height="${h2}" rx="2" fill="#d92d20"/><text x="${x+bw/2}" y="${H-8}" font-size="11" text-anchor="middle" fill="#4f525a">${AY[i].slice(0,3)}</text>`});c1+="</svg>";
+ let cum=0;const cs=mv.map(v=>(cum+=v[0]-v[1])),lo=Math.min(0,...cs),hi=Math.max(0,...cs),rg=(hi-lo)||1,px=i=>pl+bw*i+bw/2,py=v=>10+(hi-v)/rg*(H-44);
+ let c3=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><line x1="${pl}" y1="${py(0)}" x2="${W-pl}" y2="${py(0)}" stroke="#9fa2a8" stroke-dasharray="4"/><polyline fill="none" stroke="#3d7bff" stroke-width="3" points="${cs.map((v,i)=>px(i)+","+py(v)).join(" ")}"/>`;
+ cs.forEach((v,i)=>{c3+=`<circle cx="${px(i)}" cy="${py(v)}" r="3.5" fill="#3d7bff"/><text x="${px(i)}" y="${H-8}" font-size="11" text-anchor="middle" fill="#4f525a">${AY[i].slice(0,3)}</text>`});c3+="</svg>";
+ const cats=catsOf(Y,rM),ce=Object.entries(cats).sort((a,b)=>b[1]-a[1]),tot=ce.reduce((a,x)=>a+x[1],0);
+ const catH=ce.length?ce.map((x,i)=>`<div class="rrow"><div class="rtop"><b>${esc(x[0])}</b><span>${fmt(x[1])} · %${Math.round(x[1]/tot*100)}</span></div><div class="rbar"><i style="width:${x[1]/ce[0][1]*100}%;background:${PAL[i%PAL.length]}"></i></div></div>`).join(""):'<small style="color:var(--mu)">Bu ay gider kaydı yok</small>';
+ let debts=[];try{debts=S.accs.map(a=>[a.name,debtOf(a)]).filter(x=>x[1]>0.005).sort((a,b)=>b[1]-a[1])}catch(e){}
+ const dt=debts.reduce((a,x)=>a+x[1],0),debtH=debts.length?debts.map((x,i)=>`<div class="rrow"><div class="rtop"><b>${esc(x[0])}</b><span>${fmt(x[1])}</span></div><div class="rbar"><i style="width:${x[1]/debts[0][1]*100}%;background:#d92d20"></i></div></div>`).join("")+`<div style="text-align:right;font-weight:800">Toplam borç: ${fmt(dt)}</div>`:'<small style="color:var(--mu)">Borç yok</small>';
+ const B=S.budget||{},gl=[...new Set([...((S.cats&&S.cats.gider)||[]),...Object.keys(cats)])];
+ const budH=gl.map(k=>{const s=cats[k]||0,l=+B[k]||0,r=l?s/l:0,col=r>=1?"#d92d20":r>=.8?"#f59e0b":"#0f8a63";return `<div class="rrow"><div class="rtop"><b>${esc(k)}</b><span>${fmt(s)} / <input class="rinp" style="width:100px" inputmode="decimal" data-bud="${esc(k)}" value="${l||""}" placeholder="Limit"></span></div>${l?`<div class="rbar"><i style="width:${Math.min(100,r*100)}%;background:${col}"></i></div>`:""}</div>`}).join("");
+ const dl=dueList(14),remH=dl.length?dl.map(x=>`<div class="rrow"><div class="rtop"><b>${esc(x.n)}</b><span style="color:${x.diff<=0?"#d92d20":"inherit"}">${fmt(x.a)} · ${dtxt(x)}</span></div></div>`).join(""):'<small style="color:var(--mu)">14 gün içinde ödenmemiş tutar girilmiş ödeme yok</small>';
+ const msel=`<select id="rMsel" class="rinp">${AY.map((a,i)=>`<option value="${i}"${i===rM?" selected":""}>${a}</option>`).join("")}</select>`;
+ root.innerHTML=`<div class="card"><h2>Gelir / Gider · ${Y}</h2>${c1}<div style="font-size:12px;color:var(--mu)"><span style="color:#0f8a63">■</span> Gelir &nbsp; <span style="color:#d92d20">■</span> Gider</div><h3>Birikimli net (gelir − gider)</h3>${c3}</div>
+ <div class="card"><div class="rtop"><h2 style="margin:0">Kategoriye göre giderler</h2>${msel}</div>${catH}<div style="text-align:right;font-weight:800;margin-top:8px">Toplam: ${fmt(tot)}</div></div>
+ <div class="card"><h2>Hesap bazında borç</h2>${debtH}</div>
+ <div class="card"><div class="rtop"><h2 style="margin:0">Aylık bütçe limiti</h2><span style="font-size:12px;color:var(--mu)">${AY[rM]} ayı</span></div><small style="color:var(--mu)">Limit yaz, kutudan çıkınca kaydolur. %80'e gelince uyarı verir.</small>${budH}</div>
+ <div class="card"><h2>Ödeme hatırlatıcıları</h2>${remH}<h3>Ayarlar</h3><div class="rtop"><span>Ana sayfada kaç gün önceden uyar</span><input class="rinp" style="width:70px" id="remD" inputmode="numeric" value="${S.remDays===undefined?3:S.remDays}"></div><button class="rbtn noprint" data-ra="notif">Tarayıcı bildirimini aç</button><div style="font-size:12px;color:var(--mu)">Son ödeme günü, Ödemeler sayfasındaki gün alanındaki son sayıdır (ör. 1-8 → 8). Bildirim yalnızca uygulama/sekme açıkken görünür.</div></div>
+ <div class="card noprint"><h2>Dışa aktar ve yedek</h2><button class="rbtn" data-ra="csv">Excel (CSV) indir</button><button class="rbtn" data-ra="print">PDF / Yazdır</button><button class="rbtn" data-ra="json">Yedek indir (JSON)</button><button class="rbtn" data-ra="restore">Yedekten geri yükle</button><input type="file" id="rFile" accept=".json,application/json" style="display:none"><div style="font-size:12px;color:var(--mu)">Yedek, Cüzdan verilerini kapsar (Yatırımlar sayfası ayrı tutulur). Android uygulamasında indirme çalışmazsa web sürümünden yap.</div></div>`}
+function dl(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+function csv(){const q=v=>'"'+String(v).replace(/"/g,'""')+'"',rows=[["Tarih","Tür","Hesap","Kategori","Tutar","Açıklama"]];[...S.tx].sort((a,b)=>(a.date||"").localeCompare(b.date||"")).forEach(t=>{const ac=S.accs.find(x=>x.id===t.acc);rows.push([t.date||"",t.kind==="gelir"?"Gelir":"Gider",ac?ac.name:"",t.cat||"",String(t.amt).replace(".",","),t.desc||""])});return "\ufeff"+rows.map(r=>r.map(q).join(";")).join("\r\n")}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-ra]");if(!b)return;const a=b.dataset.ra;
+ if(a==="csv")dl("cuzdanim-hareketler-"+year+".csv",csv(),"text/csv;charset=utf-8");
+ else if(a==="json")dl("cuzdanim-yedek-"+new Date().toISOString().slice(0,10)+".json",JSON.stringify({v:1,state:S}),"application/json");
+ else if(a==="print"){document.body.classList.add("printR");window.print();setTimeout(()=>document.body.classList.remove("printR"),800)}
+ else if(a==="restore")g("rFile").click();
+ else if(a==="notif"){if(!("Notification" in window))alert("Bu cihaz/tarayıcı bildirimi desteklemiyor. Uyarılar ana sayfada görünür.");else Notification.requestPermission().then(p=>alert(p==="granted"?"Bildirim açıldı":"Bildirim izni verilmedi"))}});
+document.addEventListener("change",e=>{const t=e.target;
+ if(t.id==="rFile"){const f=t.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result),st=o.state||o;if(!st||!Array.isArray(st.accs)||!Array.isArray(st.tx))throw 0;if(!confirm("Mevcut verilerin yedekteki verilerle DEĞİŞTİRİLECEK. Devam edilsin mi?"))return;S=st;fix();save();render();alert("Yedek yüklendi")}catch(x){alert("Geçersiz yedek dosyası")}};r.readAsText(f);t.value=""}
+ else if(t.dataset&&t.dataset.bud!==undefined){S.budget=S.budget||{};const v=parseFloat(String(t.value).replace(",","."));if(v>0)S.budget[t.dataset.bud]=v;else delete S.budget[t.dataset.bud];save();renderR();bar()}
+ else if(t.id==="rMsel"){rM=+t.value;renderR()}
+ else if(t.id==="remD"){S.remDays=Math.max(0,parseInt(t.value)||0);save();renderR();bar()}});
+const pgs=document.querySelector(".pgs");if(pgs){const nb=document.createElement("button");nb.className="pgb";nb.dataset.pg="r";nb.textContent="Raporlar";pgs.appendChild(nb)}
+const d=document.createElement("div");d.id="pgR";d.style.display="none";g("pgF").insertAdjacentElement("afterend",d);
+const _ps=pageSw;pageSw=function(){_ps();g("pgR").style.display=page==="r"?"block":"none";if(page==="r")renderR()};
+const _rn=render;render=function(){_rn();if(page==="r")renderR();bar()};
+setTimeout(bar,800);setInterval(bar,600000);
+})();
+</script>
+<style>
+html.dark{filter:invert(.93) hue-rotate(180deg);background:#f4f4f4}
+html.dark img,html.dark video,html.dark canvas{filter:invert(1) hue-rotate(180deg)}
+#pkBio{display:block;margin:14px auto 0;padding:12px 18px;border-radius:12px;border:1px solid var(--bd);background:var(--pl2);font-weight:800;font-size:15px;color:var(--tx);cursor:pointer}
+</style>
+<script>
+(function(){
+const g=id=>document.getElementById(id),pad=n=>String(n).padStart(2,"0");
+// ---- Karanlık tema
+const applyD=()=>{try{document.documentElement.classList.toggle("dark",localStorage.getItem("cuzdanim_dark")==="1")}catch(e){}};
+const toggleD=()=>{try{localStorage.setItem("cuzdanim_dark",localStorage.getItem("cuzdanim_dark")==="1"?"0":"1")}catch(e){}applyD()};
+applyD();
+const cb=g("cikisBtn");if(cb){const d=document.createElement("button");d.id="darkBtn";d.textContent="🌙";d.title="Karanlık tema";d.style.cssText="margin-left:8px;padding:6px 10px;border:1px solid #9fa2a8;border-radius:8px;background:#e2e3e6;font-size:13px;cursor:pointer";d.onclick=toggleD;cb.insertAdjacentElement("beforebegin",d)}
+// ---- Tekrarlayan işlemler
+function runRec(){try{const R=S.rec;if(!R||!R.length)return;const n=new Date(),Y=n.getFullYear(),M=n.getMonth(),td=n.getDate();let ch=false;
+ R.forEach(r=>{if(!r.start)return;r.done=r.done||{};let [y,m]=r.start.split("-").map(Number);m--;
+  while(y<Y||(y===Y&&m<=M)){const dim=new Date(y,m+1,0).getDate(),d=Math.min(r.day,dim),cur=y===Y&&m===M;
+   if(!cur||d<=td){const key=y+"-"+pad(m+1);if(!r.done[key]){r.done[key]=1;S.tx.push({id:S.nid++,kind:r.kind,acc:r.acc,cat:r.cat,amt:r.amt,date:key+"-"+pad(d),desc:r.desc||""});ch=true}}
+   m++;if(m>11){m=0;y++}}});
+ if(ch){save();render()}}catch(e){}}
+// ---- Ara / Filtrele
+function qInstall(){const h=g("hmon");if(!h||g("qCard"))return;const card=h.closest(".card");if(!card)return;const d=document.createElement("div");d.className="card";d.id="qCard";d.style.marginBottom="16px";
+ d.innerHTML='<h2 style="margin:0 0 10px">🔎 Ara / Filtrele</h2><input id="qT" class="rinp" style="width:100%;box-sizing:border-box" placeholder="Açıklama, kategori, hesap veya tutar..."><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><select id="qK" class="rinp"><option value="">Tümü</option><option value="gelir">Gelir</option><option value="gider">Gider</option></select><input id="qMin" class="rinp" style="width:90px" inputmode="decimal" placeholder="Min ₺"><input id="qMax" class="rinp" style="width:90px" inputmode="decimal" placeholder="Maks ₺"><input id="qF" type="date" class="rinp"><input id="qB" type="date" class="rinp"></div><div id="qR"></div>';
+ card.parentNode.insertBefore(d,card)}
+function qRun(){const v=id=>g(id).value.trim(),t=v("qT").toLocaleLowerCase("tr-TR"),k=v("qK"),mn=parseFloat(v("qMin").replace(",",".")),mx=parseFloat(v("qMax").replace(",",".")),f=v("qF"),b=v("qB"),R=g("qR");
+ if(!t&&!k&&isNaN(mn)&&isNaN(mx)&&!f&&!b){R.innerHTML="";return}
+ const an=id=>{const a=S.accs.find(x=>x.id===id);return a?a.name:""};
+ const L=S.tx.filter(x=>(!k||x.kind===k)&&(isNaN(mn)||x.amt>=mn)&&(isNaN(mx)||x.amt<=mx)&&(!f||(x.date||"")>=f)&&(!b||(x.date||"")<=b)&&(!t||((x.desc||"")+" "+(x.cat||"")+" "+an(x.acc)+" "+x.amt+" "+fmt(x.amt)).toLocaleLowerCase("tr-TR").includes(t))).sort((a,c)=>(c.date||"").localeCompare(a.date||""));
+ const gi=L.filter(x=>x.kind==="gelir").reduce((a,x)=>a+x.amt,0),ge=L.filter(x=>x.kind==="gider").reduce((a,x)=>a+x.amt,0);
+ R.innerHTML='<div style="margin:10px 0;font-weight:800;font-size:13px">'+L.length+' kayıt · Gelir <span style="color:#0f8a63">'+fmt(gi)+'</span> · Gider <span style="color:#d92d20">'+fmt(ge)+'</span></div>'+L.slice(0,200).map(x=>'<div class="rrow"><div class="rtop"><span>'+esc(x.date||"")+' · '+esc(an(x.acc))+'</span><b style="color:'+(x.kind==="gelir"?"#0f8a63":"#d92d20")+'">'+(x.kind==="gelir"?"+":"−")+fmt(x.amt)+'</b></div><small style="color:var(--mu)">'+esc(x.cat||"")+(x.desc?" · "+esc(x.desc):"")+'</small></div>').join("")+(L.length>200?'<small>İlk 200 kayıt gösteriliyor, filtreyi daralt.</small>':"")}
+document.addEventListener("input",e=>{if(e.target.id&&/^q(T|Min|Max)$/.test(e.target.id))qRun()});
+document.addEventListener("change",e=>{if(e.target.id&&/^q(K|F|B)$/.test(e.target.id))qRun()});
+// ---- Parmak izi
+const b64=a=>btoa(String.fromCharCode(...new Uint8Array(a))),ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0)),hasBio=()=>{try{return !!localStorage.getItem("cuzdanim_bio")}catch(e){return false}};
+async function bioOn(){try{if(!window.PublicKeyCredential||!navigator.credentials)throw 0;if(!(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()))throw 0;
+ const c=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:"Cüzdanım"},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:"cuzdanim",displayName:"Cüzdanım"},pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required"},timeout:60000}});
+ localStorage.setItem("cuzdanim_bio",b64(c.rawId));bioBtn();alert("Parmak izi / yüz tanıma etkinleştirildi. PIN yedek olarak durur.")}catch(e){alert("Bu cihazda ya da uygulamada biyometrik giriş kullanılamıyor. PIN ile devam edebilirsin.")}}
+async function bioGo(){try{const id=localStorage.getItem("cuzdanim_bio");if(!id)return;await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:ub(id),transports:["internal"]}],userVerification:"required",timeout:60000}});document.documentElement.classList.remove("kilit")}catch(e){}}
+function bioBtn(){let b=g("pkBio");if(!hasBio()){if(b)b.remove();return}if(!b&&g("pkg")){b=document.createElement("button");b.id="pkBio";b.type="button";b.textContent="👆 Parmak izi ile aç";b.onclick=bioGo;g("pkg").insertAdjacentElement("afterend",b)}}
+bioBtn();if(hasBio())setTimeout(bioGo,600);
+// ---- Raporlar sekmesine ek kartlar
+function extras(){const r=g("pgR");if(!r||g("rcCard"))return;const A=S.accs||[],R=S.rec||[],cn=new Date().getFullYear()+"-"+pad(new Date().getMonth()+1);
+ const an=id=>{const a=A.find(x=>x.id===id);return a?a.name:"?"};
+ const list=R.length?R.map(x=>'<div class="rrow"><div class="rtop"><span><b>'+esc(x.cat)+'</b> · '+(x.kind==="gelir"?"Gelir":"Gider")+' · '+esc(an(x.acc))+' · her ayın '+x.day+'. günü</span><span>'+fmt(x.amt)+' <button class="rbtn" data-rb="rdel" data-id="'+x.id+'" style="margin:0 0 0 6px;padding:4px 10px">Sil</button></span></div>'+(x.desc?'<small style="color:var(--mu)">'+esc(x.desc)+'</small>':'')+'</div>').join(""):'<small style="color:var(--mu)">Henüz tekrarlayan işlem yok</small>';
+ const cats=[...new Set([...((S.cats&&S.cats.gider)||[]),...((S.cats&&S.cats.gelir)||[])])];
+ r.insertAdjacentHTML("beforeend",'<div class="card" id="rcCard"><h2>Tekrarlayan işlemler</h2>'+list+'<h3>Yeni ekle</h3><div style="display:flex;gap:6px;flex-wrap:wrap"><select id="rcK" class="rinp"><option value="gelir">Gelir</option><option value="gider" selected>Gider</option></select><select id="rcA" class="rinp">'+A.map(a=>'<option value="'+a.id+'">'+esc(a.name)+'</option>').join("")+'</select><input id="rcC" class="rinp" list="rcL" placeholder="Kategori" style="width:130px"><datalist id="rcL">'+cats.map(c=>'<option value="'+esc(c)+'">').join("")+'</datalist><input id="rcT" class="rinp" inputmode="decimal" placeholder="Tutar" style="width:100px"><input id="rcD" class="rinp" inputmode="numeric" placeholder="Gün (1-31)" style="width:100px"><input id="rcM" type="month" class="rinp" value="'+cn+'"><input id="rcE" class="rinp" placeholder="Açıklama (isteğe bağlı)" style="flex:1;min-width:140px"></div><button class="rbtn" data-rb="radd" style="margin-top:8px">Ekle</button><div style="font-size:12px;color:var(--mu)">Uygulamayı açtığında, günü gelen kayıtlar otomatik eklenir. Başlangıç ayından önceki aylar için kayıt oluşturulmaz. Oluşan kaydı silersen aynı ay için yeniden eklenmez.</div></div>'
+ +'<div class="card" id="rsCard"><h2>Görünüm ve güvenlik</h2><button class="rbtn" data-rb="dark">🌙 Karanlık temayı aç / kapat</button><button class="rbtn" data-rb="bioon">👆 Parmak izi girişini etkinleştir</button>'+(hasBio()?'<button class="rbtn" data-rb="biooff">Parmak izini kapat</button>':'')+'<div style="font-size:12px;color:var(--mu)">Parmak izi, tarayıcı/cihaz desteklerse çalışır (Android uygulamasında çoğu zaman desteklenmez). PIN her zaman yedek olarak kalır.</div></div>')}
+new MutationObserver(()=>extras()).observe(document.body,{childList:true,subtree:true});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-rb]");if(!b)return;const a=b.dataset.rb;
+ if(a==="dark")toggleD();
+ else if(a==="bioon")bioOn();
+ else if(a==="biooff"){try{localStorage.removeItem("cuzdanim_bio")}catch(x){}bioBtn();const c=g("rsCard");if(c){c.remove();const p=g("rcCard");if(p)p.remove();extras()}}
+ else if(a==="rdel"){if(!confirm("Tekrarlayan işlem silinsin mi? (Daha önce oluşan kayıtlar kalır)"))return;S.rec=(S.rec||[]).filter(x=>String(x.id)!==b.dataset.id);save();const p=g("rcCard"),s=g("rsCard");if(p)p.remove();if(s)s.remove();extras()}
+ else if(a==="radd"){const v=id=>g(id).value.trim(),amt=parseFloat(v("rcT").replace(",",".")),day=parseInt(v("rcD")),m=v("rcM");
+  if(!(amt>0)||!(day>=1&&day<=31)||!m){alert("Tutar, gün (1-31) ve başlangıç ayı gerekli");return}
+  S.rec=S.rec||[];S.rec.push({id:Date.now(),kind:v("rcK"),acc:+v("rcA"),cat:v("rcC")||"Diğer",amt,day,desc:v("rcE"),start:m,done:{}});save();runRec();const p=g("rcCard"),s=g("rsCard");if(p)p.remove();if(s)s.remove();extras()}});
+const t0=Date.now(),_rn=render;render=function(){_rn();qInstall();if(Date.now()-t0>2500)runRec()};
+setTimeout(()=>{qInstall();runRec()},2600);
+})();
+</script>
+<style id="fit-mobile">
+@media(max-width:899px){
+html,body{max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{background-attachment:scroll;-webkit-tap-highlight-color:transparent}
+.w{max-width:100%!important;margin:0!important;padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(76px + env(safe-area-inset-bottom,0px))!important;overflow-wrap:anywhere}
+:where(.w) *{min-width:0}
+.top{gap:8px;flex-wrap:wrap}
+.logo{width:34px;height:34px;border-radius:10px;flex:none}
+h1{font-size:18px}
+.yr{padding:6px 8px;font-size:14px;width:auto}
+#sync{order:5;flex:1 1 100%;margin-left:0!important;font-size:11px!important}
+#darkBtn{margin-left:auto!important}
+#darkBtn,#cikisBtn{order:3;flex:none}
+.pgs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 12px;overflow:visible}
+.pgb{padding:8px 4px;font-size:13px;line-height:1.2;min-height:44px;white-space:normal;text-align:center;display:flex;align-items:center;justify-content:center}
+.kbar{position:static!important;flex-direction:row!important;width:auto!important;margin:0 0 12px!important;gap:6px}
+.kb{flex:1 1 calc(50% - 6px);padding:8px 10px;font-size:12px;line-height:1.2}
+.months{gap:6px;margin-bottom:12px}
+.m{padding:7px 11px;font-size:13px}
+.g4{grid-template-columns:1fr 1fr!important;gap:10px}
+.g2,.accs{grid-template-columns:1fr!important}
+.card{padding:12px}
+.sl{font-size:11px}
+.sv{font-size:clamp(15px,5vw,20px);margin-top:8px}
+.row,.tg{gap:8px}
+input,select{font-size:16px;padding:11px 12px;max-width:100%}
+.hd{flex-wrap:wrap;gap:8px}
+.rtop{flex-wrap:wrap}
+.rinp{max-width:100%}
+img,svg,canvas,video{max-width:100%}
+.pw{max-width:100%}
+#pgY,#pgF{max-width:100%!important}
+#pgY table,#pgF table{display:block;max-width:100%;overflow-x:auto}
+.pt{font-size:11px}
+.pt .st{min-width:50px!important;width:58px;padding:8px 5px!important;font-size:11px;white-space:normal;word-break:break-word}
+.pt th.hk{min-width:46px!important;width:48px;padding:8px 3px!important;font-size:11px}
+.pt thead th{padding:6px 2px;font-size:11px}
+.pt td{min-width:46px!important}
+.pt td.tt{padding:0 4px!important;font-size:11px}
+.pt .pi{width:100%!important;min-width:0;padding:8px 1px!important;font-size:11px}
+.pt .pac{width:calc(100% - 4px)!important;font-size:9px;padding:1px 0;margin:0 2px 3px}
+.pt .pcl{width:16px;height:16px}
+}
+@media(max-width:380px){.row{grid-template-columns:1fr}.g4{gap:8px}.pgb{padding:8px 12px}}
+</style>
+<style id="fit-web">
+@media(min-width:900px){
+.w{max-width:1100px;padding:32px 28px 90px}
+h1{font-size:24px}
+.card{padding:20px}
+.sv{font-size:26px}
+.pgb{padding:11px 26px}
+.m,.kb,.tb,.pgb,.sm,.rbtn{transition:filter .15s}
+.m:hover,.kb:hover,.tb:hover,.pgb:hover,.sm:hover,.rbtn:hover{filter:brightness(1.07)}
+#pgR[style*="block"]{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;align-items:start}
+#pgR>.card:first-child{grid-column:1/-1}
+}
+@media(min-width:1480px){
+.w{max-width:1180px;margin-left:280px;margin-right:auto}
+}
+body.wide .w{max-width:1800px;margin:0 auto}
+</style>
+<style id="theme-patron">
+html.t-patron body{background:linear-gradient(160deg,#071330,#0d2a63 60%,#123a82) fixed!important;color:#e8eeff}
+html.t-patron .top h1{color:#fff}
+html.t-patron .logo{background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;box-shadow:0 4px 12px rgba(47,107,255,.5)}
+html.t-patron .yr{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.28)}
+html.t-patron .yr option{color:#111}
+html.t-patron #sync{color:#9db0d8!important}
+html.t-patron #cikisBtn,html.t-patron #themeBtn{background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.28)!important}
+html.t-patron #darkBtn{display:none!important}
+html.t-patron.dark{filter:none!important;background:none!important}
+html.t-patron .kb,html.t-patron .tb,html.t-patron .m{background:rgba(255,255,255,.1);color:#dbe6ff;border:1px solid rgba(255,255,255,.18);box-shadow:none}
+html.t-patron .tb.on,html.t-patron .m.on{background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;border-color:#2f6bff;box-shadow:0 4px 12px rgba(47,107,255,.45)}
+html.t-patron .card{background:#fff;border:0;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.28)}
+html.t-patron #pgW .g4>.card,html.t-patron #pgW .g4>.card *{color:#fff!important}
+html.t-patron #pgW .g4>.card{box-shadow:0 8px 22px rgba(0,0,0,.35)}
+html.t-patron #pgW .g4>.card:nth-child(1){background:linear-gradient(135deg,#0f9d58,#2ecc71)}
+html.t-patron #pgW .g4>.card:nth-child(2){background:linear-gradient(135deg,#d92d20,#ff5a4d)}
+html.t-patron #pgW .g4>.card:nth-child(3){background:linear-gradient(135deg,#1d4ed8,#3b82f6)}
+html.t-patron #pgW .g4>.card:nth-child(4){background:linear-gradient(135deg,#f59e0b,#fb923c)}
+html.t-patron #pgW .g4>.card hr,html.t-patron #pgW .g4>.card .ln{border-color:rgba(255,255,255,.35)}
+html.t-patron #pgP,html.t-patron #pgB,html.t-patron #pgF,html.t-patron #pgY{background:#eef2fa;border-radius:16px;padding:14px;color:#1b1d22}
+html.t-patron .pgb{background:transparent;border:0;box-shadow:none;color:#c9d6f5;border-radius:10px}
+html.t-patron .pgb::before{content:attr(data-i)}
+html.t-patron .pgb:hover{background:rgba(255,255,255,.08)}
+html.t-patron .pgb.on{background:linear-gradient(90deg,#2f6bff,#1d4ed8);color:#fff;box-shadow:0 4px 14px rgba(47,107,255,.45)}
+@media(min-width:900px){
+html.t-patron .pgs{position:fixed;left:0;top:0;bottom:0;width:232px;z-index:60;display:flex!important;flex-direction:column;gap:4px;margin:0;padding:86px 12px 16px;background:linear-gradient(180deg,#081533,#0b2150);border-right:1px solid rgba(255,255,255,.08);overflow-y:auto;overflow-x:hidden}
+html.t-patron .pgs::before{content:"CÜZDANIM";position:absolute;top:28px;left:22px;font-size:20px;font-weight:900;letter-spacing:2px;color:#fff}
+html.t-patron .pgb{display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:12px 14px;font-size:14px;text-align:left;white-space:normal;min-height:0}
+html.t-patron .pgb::before{font-size:17px;width:24px;text-align:center}
+html.t-patron .w{margin-left:250px!important;margin-right:auto!important;max-width:1100px!important}
+html.t-patron .kbar{position:static!important;flex-direction:row!important;width:auto!important;margin:0 0 14px!important}
+}
+@media(max-width:899px){
+html.t-patron .pgs{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:60;display:flex!important;gap:2px;margin:0;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,#0b2150,#081533);border-top:1px solid rgba(255,255,255,.12);overflow:visible;grid-template-columns:none}
+html.t-patron .pgb{flex:1 1 0;min-width:0;flex-direction:column;display:flex;align-items:center;justify-content:center;gap:2px;padding:6px 2px;min-height:0;font-size:0;line-height:1}
+html.t-patron .pgb::before{font-size:18px;line-height:1}
+html.t-patron .pgb::after{content:attr(data-s);font-size:10px;font-weight:700;line-height:1.1;color:inherit}
+html.t-patron .pgb.on{background:rgba(47,107,255,.3)}
+html.t-patron #pkb{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+</style>
+<script>
+(function(){
+const T="cuzdanim_theme",H=document.documentElement,M={w:["🏠","Cüzdan"],p:["💳","Ödemeler"],y:["📈","Yatırım"],b:["🤝","Borç/Alacak"],f:["🏡","Fuzul"],r:["📊","Raporlar"]};
+document.querySelectorAll(".pgb").forEach(b=>{const m=M[b.dataset.pg]||["•",b.textContent.slice(0,9)];b.dataset.i=m[0];b.dataset.s=m[1]});
+const on=()=>{try{return localStorage.getItem(T)==="patron"}catch(e){return false}};
+const ap=()=>{H.classList.toggle("t-patron",on());const b=document.getElementById("themeBtn");if(b)b.textContent=on()?"🎨 Klasik":"🎨 Patron"};
+const d=document.getElementById("darkBtn")||document.getElementById("cikisBtn");
+if(d){const b=document.createElement("button");b.id="themeBtn";b.style.cssText="margin-left:8px;padding:6px 10px;border:1px solid #9fa2a8;border-radius:8px;background:#e2e3e6;color:#1b1d22;font-size:12px;font-weight:700;cursor:pointer;order:3;flex:none";b.onclick=()=>{try{localStorage.setItem(T,on()?"classic":"patron")}catch(e){}ap()};(document.getElementById("darkBtn")?d.insertAdjacentElement("afterend",b):d.insertAdjacentElement("beforebegin",b))}
+ap();
+})();
+</script>
+<style id="theme-patron-fix">
+html.t-patron :is(#pgP,#pgB,#pgF,#pgY) :is(.m,.tb,.kb){background:#fff;color:#1e3a8a;border:1px solid #c7d4f0;box-shadow:0 1px 3px rgba(30,58,138,.12)}
+html.t-patron :is(#pgP,#pgB,#pgF,#pgY) :is(.m,.tb,.kb):hover{background:#e8efff}
+html.t-patron :is(#pgP,#pgB,#pgF,#pgY) :is(.m.on,.tb.on){background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;border-color:#2f6bff;box-shadow:0 4px 12px rgba(47,107,255,.4)}
+html.t-patron :is(#pgP,#pgB,#pgF,#pgY) :is(.sm,.mb){color:#1e3a8a}
+html.t-patron :is(#pgP,#pgB,#pgF,#pgY) h1,html.t-patron :is(#pgP,#pgB,#pgF,#pgY) h2,html.t-patron :is(#pgP,#pgB,#pgF,#pgY) h3{color:#0f1f4d}
+</style>
+<style id="theme-patron-vars">
+html.t-patron{--bd:#c7d4f0;--in:#eef3ff;--mu:#4a5b82;--pt:#1d4ed8;--pl2:#e3ebff;--pl3:#f0f5ff;--plg:linear-gradient(180deg,#ffffff,#d6e3ff)}
+html.t-patron #pgY{--ybg:#eef2fa;--ycard:#ffffff;--ybd:#c7d4f0;--ymu:#4a5b82}
+html.t-patron select:focus,html.t-patron input:focus{border-color:#2f6bff;box-shadow:0 0 0 3px rgba(47,107,255,.18)}
+html.t-patron .save{background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;border-color:#2f6bff;box-shadow:0 6px 16px rgba(47,107,255,.4)}
+html.t-patron .sm{background:#e3ebff;color:#1e3a8a;border-color:#c7d4f0}
+html.t-patron .rbtn{background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;border-color:#2f6bff}
+html.t-patron .pt th.hk{background:#1e3a8a}
+html.t-patron .pt tfoot td,html.t-patron .pt tfoot th{border-top-color:#2f6bff}
+html.t-patron .pt .st{background:#e3ebff;color:#0f1f4d}
+html.t-patron .acc{background:#f0f5ff;border-color:#c7d4f0}
+html.t-patron .tg button{background:#eef3ff;color:#4a5b82}
+html.t-patron .ib{color:#4a5b82}
+html.t-patron .ib:hover{color:#1d4ed8}
+html.t-patron .ic{background:linear-gradient(135deg,#dbe6ff,#b9ceff);color:#1d4ed8}
+html.t-patron .rbar{background:#dbe6ff}
+</style>
+<style id="theme-patron-text">
+html.t-patron .card,html.t-patron :is(#pgP,#pgB,#pgF,#pgY,#pgR){color:#0f1f4d}
+html.t-patron .card small,html.t-patron .card .sl{color:#4a5b82}
+html.t-patron .card svg text{fill:#4a5b82!important}
+html.t-patron #pgW .g4>.card,html.t-patron #pgW .g4>.card *{color:#fff!important}
+html.t-patron .card .rtop span{color:#2b3d6b}
+</style>
+<style id="tour-css">
+#tour{position:fixed;inset:0;z-index:99990;display:none;background:linear-gradient(160deg,#071330,#0d2a63 60%,#123a82);color:#fff;overflow:hidden}
+#tour.on{display:flex;flex-direction:column;align-items:center}
+html.dark #tour{filter:invert(1) hue-rotate(180deg)}
+.tr-top{width:100%;max-width:460px;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 0}
+.tr-top b{font-size:15px;letter-spacing:2px}
+.tr-top button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:7px 14px;font-weight:700;font-size:13px;cursor:pointer}
+.tr-body{flex:1;width:100%;max-width:460px;position:relative;overflow:hidden}
+.tr-s{position:absolute;inset:0;padding:6px 22px;display:flex;flex-direction:column;align-items:center;opacity:0;transform:translateX(40px);transition:opacity .4s,transform .4s;pointer-events:none;overflow-y:auto}
+.tr-s.act{opacity:1;transform:none;pointer-events:auto}
+.tr-s.pv{transform:translateX(-40px)}
+.tr-ill{height:225px;width:100%;display:flex;align-items:center;justify-content:center;position:relative;flex:none}
+.tr-s h2{font-size:23px;margin:4px 0 8px;text-align:center;color:#fff}
+.tr-s p{font-size:15px;line-height:1.5;color:#c9d6f5;text-align:center;margin:0 0 8px}
+.tr-s ul{list-style:none;padding:0;margin:4px 0 0;width:100%}
+.tr-s li{background:rgba(255,255,255,.09);border-radius:12px;padding:9px 12px;margin:6px 0;font-size:13.5px;color:#e8eeff;line-height:1.4}
+.tr-s li b{color:#8fbcff}
+.tr-bot{width:100%;max-width:460px;padding:10px 18px calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tr-bot button{border:0;border-radius:12px;padding:12px 20px;font-weight:800;font-size:15px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#2f6bff,#1d4ed8);box-shadow:0 6px 16px rgba(47,107,255,.45)}
+.tr-bot button.g{background:rgba(255,255,255,.14);box-shadow:none}
+.tr-bot button:disabled{opacity:.35}
+.tr-dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.tr-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);transition:.3s;cursor:pointer}
+.tr-dots i.on{width:20px;border-radius:6px;background:#4f8bff}
+.tr-c{border-radius:14px;padding:12px 14px;margin:7px 0;display:flex;justify-content:space-between;font-weight:700;font-size:14px;width:100%}
+@keyframes trPop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@keyframes trSl{from{transform:translateX(60px);opacity:0}to{transform:none;opacity:1}}
+@keyframes trUp{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes trFl{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes trGr{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes trW{from{width:0}to{width:var(--w)}}
+@keyframes trDr{to{stroke-dashoffset:0}}
+@keyframes trSk{0%,100%{transform:rotate(0)}20%{transform:rotate(18deg)}40%{transform:rotate(-16deg)}60%{transform:rotate(10deg)}80%{transform:rotate(-6deg)}}
+@keyframes trHl{0%,15%{left:0}30%,45%{left:25%}60%,75%{left:50%}90%,100%{left:75%}}
+@keyframes trPu{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes trTg{0%,30%{left:4px}70%,100%{left:34px}}
+@keyframes trTv{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:62px;opacity:0}}
+@keyframes trTy{to{width:10ch}}
+@keyframes trCr{0%,45%{opacity:1}50%,100%{opacity:0}}
+.tr-s.act .pop{animation:trPop .6s cubic-bezier(.2,1.4,.4,1) both;animation-delay:var(--d,0s)}
+.tr-s.act .sl{animation:trSl .6s ease both;animation-delay:var(--d,0s)}
+.tr-s.act .up{animation:trUp .6s ease both;animation-delay:var(--d,0s)}
+.tr-s.act .fl{animation:trFl 3s ease-in-out infinite;animation-delay:var(--d,0s)}
+.tr-s.act .gr{transform-origin:bottom;animation:trGr .8s ease both;animation-delay:var(--d,0s)}
+.tr-s.act .wd{animation:trW 1.2s ease both;animation-delay:var(--d,0s)}
+.tr-s.act .dr{stroke-dasharray:500;stroke-dashoffset:500;animation:trDr 2s ease forwards;animation-delay:var(--d,0s)}
+.tr-s.act .ck{stroke-dasharray:40;stroke-dashoffset:40;animation:trDr .5s ease forwards;animation-delay:var(--d,0s)}
+.tr-s.act .sk{transform-origin:top center;animation:trSk 1.6s ease-in-out infinite}
+.tr-s.act .pu{animation:trPu 1.6s ease-in-out infinite}
+.tr-s.act .hl{animation:trHl 6s ease-in-out infinite}
+.tr-s.act .tg{animation:trTg 3s ease-in-out infinite alternate}
+.tr-s.act .tv{animation:trTv 2.2s linear infinite;animation-delay:var(--d,0s)}
+.tr-s.act .ty{overflow:hidden;white-space:nowrap;width:0;border-right:2px solid #8fbcff;animation:trTy 2.2s steps(10) .6s forwards}
+html.t-patron #tourBtn{background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.28)!important}
+</style>
+<script>
+(function(){
+const K="cuzdanim_tour_v1",g=id=>document.getElementById(id);
+const card=(bg,a,b,d)=>`<div class="tr-c sl" style="background:${bg};--d:${d}s"><span>${a}</span><span>${b}</span></div>`;
+const tile=(bg,l,v,d)=>`<div class="pop" style="--d:${d}s;background:${bg};border-radius:14px;padding:12px;min-width:128px;box-shadow:0 8px 20px rgba(0,0,0,.35)"><div style="font-size:11.5px;opacity:.9">${l}</div><div style="font-size:18px;font-weight:800;margin-top:6px">${v}</div></div>`;
+const chk=(n,d,dl)=>`<div class="sl" style="--d:${dl}s;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);border-radius:12px;padding:9px 12px;margin:6px 0;width:100%"><svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="#8fbcff" stroke-width="2"/><path class="ck" style="--d:${dl+.5}s" d="M7 13l4 4 8-9" fill="none" stroke="#2ecc71" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><b style="flex:1;font-size:14px">${n}</b><span style="font-size:12px;color:#c9d6f5">${d}</span></div>`;
+const link=(a,b)=>`<div style="display:flex;align-items:center;gap:6px;font-size:34px"><span>${a}</span><div style="position:relative;width:70px;height:2px;background:rgba(255,255,255,.3)"><i class="tv" style="position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:#8fbcff;left:0"></i><i class="tv" style="--d:1.1s;position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:#2ecc71;left:0"></i></div><span>${b}</span></div>`;
+const SL=[
+{t:"Cüzdanım'a hoş geldin",d:"Gelirini, giderini, kart borçlarını ve yatırımlarını tek uygulamada takip et. Kısa bir turla nasıl kullanılacağını gösterelim.",l:["<b>Atla</b> diyerek turu istediğin an kapatabilirsin","Turu sonra üstteki <b>❔</b> butonundan tekrar izleyebilirsin"],
+ i:`<div class="pop" style="width:110px;height:110px;border-radius:30px;background:linear-gradient(135deg,#2f6bff,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:0 12px 40px rgba(47,107,255,.6)">👛</div><span class="fl" style="position:absolute;left:14%;top:26px;font-size:32px">💰</span><span class="fl" style="--d:.7s;position:absolute;right:14%;top:40px;font-size:30px">💳</span><span class="fl" style="--d:1.4s;position:absolute;left:22%;bottom:22px;font-size:30px">📈</span><span class="fl" style="--d:2s;position:absolute;right:20%;bottom:26px;font-size:28px">🪙</span>`},
+{t:"Önce hesaplarını ekle",d:"Maaşın yattığı hesabı, kredi kartlarını ve kredilerini ayrı ayrı tanımla. Her işlem bir hesaba bağlanır.",l:["<b>F3 · Hesap Ekle</b> ile yeni hesap aç","Kredi kartı ve kredilerde bakiye <b>borç</b> olarak izlenir","Üstteki hesap sekmelerinden tek bir hesabı süzebilirsin"],
+ i:`<div style="width:100%;max-width:300px">${card("linear-gradient(135deg,#0f9d58,#2ecc71)","💼 Maaş Hesabı","₺12.500",0)}${card("linear-gradient(135deg,#d92d20,#ff5a4d)","💳 Kredi Kartı","−₺3.200",.3)}${card("linear-gradient(135deg,#1d4ed8,#3b82f6)","🏦 Kredi","−₺45.000",.6)}<div style="font-size:11px;text-align:center;opacity:.6">örnek tutarlar</div></div>`},
+{t:"Gelir ve gider kaydet",d:"Para girdiğinde ya da harcadığında hemen kaydet. Tutar, hesap, kategori, tarih ve açıklama yazman yeterli.",l:["<b>F1 · Gelir Ekle</b> ve <b>F2 · Gider Ekle</b>","Yanlış yaptıysan <b>Geri Al</b> ile geri alırsın","<b>F7 · Son Hesap Hareketleri</b> ile geçmişi görürsün"],
+ i:`<div style="width:100%;max-width:300px"><div style="display:flex;gap:8px;margin-bottom:8px"><div class="pu" style="flex:1;text-align:center;padding:10px;border-radius:12px;background:#0f9d58;font-weight:800;font-size:13px">F1 + Gelir</div><div class="pu" style="flex:1;text-align:center;padding:10px;border-radius:12px;background:#d92d20;font-weight:800;font-size:13px">F2 − Gider</div></div>${card("rgba(46,204,113,.25)","Maaş","+₺2.870",.3)}${card("rgba(255,90,77,.25)","Market","−₺450",.7)}${card("rgba(255,90,77,.25)","Fatura","−₺1.200",1.1)}</div>`},
+{t:"Ayı seç, ara, süz",d:"Üstteki ay butonlarıyla ayı değiştir. Hareketlerde açıklama, kategori ya da tutara göre arama yapabilirsin.",l:["Yıl ve ay seçimi tüm kutuları günceller","<b>🔎 Ara / Filtrele</b> kartı: metin, tür, tutar ve tarih aralığı"],
+ i:`<div style="width:280px"><div style="position:relative;display:flex;height:44px;border-radius:30px;background:rgba(255,255,255,.12);overflow:hidden;font-weight:700"><div class="hl" style="position:absolute;top:0;bottom:0;left:0;width:25%;background:linear-gradient(135deg,#2f6bff,#1d4ed8);border-radius:30px"></div><span style="flex:1;text-align:center;line-height:44px;z-index:1">Ağu</span><span style="flex:1;text-align:center;line-height:44px;z-index:1">Eyl</span><span style="flex:1;text-align:center;line-height:44px;z-index:1">Eki</span><span style="flex:1;text-align:center;line-height:44px;z-index:1">Kas</span></div><div style="margin-top:22px;background:#fff;color:#0f1f4d;border-radius:12px;padding:12px 14px;display:flex;gap:8px;align-items:center;font-weight:600">🔎 <span class="ty">market 450</span></div></div>`},
+{t:"Özet kutuları",d:"Seçili ayın durumu tek bakışta: ne kadar kazandın, ne harcadın, geriye ne kaldı.",l:["<b>Yeşil</b> bu ay gelir, <b>kırmızı</b> bu ay gider","<b>Mavi</b> net (gelir − gider), <b>turuncu</b> toplam bakiye ve borç","<b>F4–F6</b>: günlük borç, kategori bazında gider ve gelir dökümü"],
+ i:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${tile("linear-gradient(135deg,#0f9d58,#2ecc71)","Bu Ay Gelir","₺2.870",0)}${tile("linear-gradient(135deg,#d92d20,#ff5a4d)","Bu Ay Gider","₺25.782",.2)}${tile("linear-gradient(135deg,#1d4ed8,#3b82f6)","Bu Ay Net","−₺22.912",.4)}${tile("linear-gradient(135deg,#f59e0b,#fb923c)","Toplam Bakiye","₺1.121.332",.6)}</div>`},
+{t:"Aylık ödemelerini takip et",d:"Kredi kartı, fatura, taksit gibi her ay tekrarlanan ödemelerini Ödemeler sayfasına yaz. Ay ay tutarı gir, ödeyince işaretle.",l:["Ödeme günü yaklaşınca ana sayfanın üstünde <b>⏰ uyarı</b> çıkar","Kaç gün önceden uyaracağını <b>Raporlar</b>'dan ayarlarsın"],
+ i:`<div style="width:100%;max-width:300px;position:relative">${chk("Kredi Kartı","8 Kasım",0)}${chk("Elektrik","15 Kasım",.5)}${chk("İnternet","20 Kasım",1)}<span class="sk" style="position:absolute;right:-6px;top:-30px;font-size:34px">🔔</span></div>`},
+{t:"Yatırımlarını izle",d:"Yatırımlarını kaydet, güncel fiyatlarını gir; değerini ve kâr/zarar durumunu gör.",l:["<b>Yatırımlar</b> sekmesinde kayıt ekle","Fiyatı güncelledikçe toplamlar yenilenir"],
+ i:`<svg width="290" height="170" viewBox="0 0 290 170"><g stroke="rgba(255,255,255,.15)"><line x1="10" y1="30" x2="280" y2="30"/><line x1="10" y1="80" x2="280" y2="80"/><line x1="10" y1="130" x2="280" y2="130"/></g><polyline class="dr" fill="none" stroke="#4f8bff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" points="10,140 50,120 85,128 120,90 160,100 200,60 240,70 275,28"/><circle class="pop" style="--d:1.8s" cx="275" cy="28" r="7" fill="#2ecc71"/><text class="pop" style="--d:2s" x="205" y="22" fill="#2ecc71" font-size="15" font-weight="800">+%12</text></svg>`},
+{t:"Borç ve alacaklarını unutma",d:"Kime borcun var, kimden alacağın var tek yerde dursun.",l:["<b>Borçlarım ve Alacaklarım</b> sekmesinden kişi bazlı takip et"],
+ i:`<div style="display:flex;gap:14px"><div class="pop" style="background:linear-gradient(135deg,#d92d20,#ff5a4d);border-radius:16px;padding:16px;width:130px;text-align:center"><div class="fl" style="font-size:34px">⬇️</div><b>Borçlarım</b><div style="font-size:18px;font-weight:800;margin-top:6px">₺104.984</div></div><div class="pop" style="--d:.3s;background:linear-gradient(135deg,#0f9d58,#2ecc71);border-radius:16px;padding:16px;width:130px;text-align:center"><div class="fl" style="--d:.6s;font-size:34px">⬆️</div><b>Alacaklarım</b><div style="font-size:18px;font-weight:800;margin-top:6px">₺12.300</div></div></div>`},
+{t:"Raporlar, bütçe ve yedek",d:"Gelir-gider grafikleri, kategori dağılımı, aylık bütçe limiti ve tekrarlayan işlemler bu sekmede.",l:["Kategoriye <b>limit</b> yaz, %80'e gelince uyarı alırsın","<b>Tekrarlayan işlem</b>: maaş, kira gibi kayıtlar her ay kendiliğinden eklenir","<b>Excel / PDF</b> çıktısı ve <b>JSON yedek</b>"],
+ i:`<div style="width:280px"><div style="display:flex;align-items:flex-end;gap:10px;height:100px;justify-content:center">${[50,80,40,95,65,85].map((h,k)=>`<div class="gr" style="--d:${k*.12}s;width:26px;height:${h}px;border-radius:6px 6px 0 0;background:${k%2?"#ff5a4d":"#2ecc71"}"></div>`).join("")}</div>${[["Market","45%","#2ecc71"],["Fatura","85%","#f59e0b"],["Eğlence","100%","#ff5a4d"]].map((r,k)=>`<div style="margin-top:9px;font-size:12px;display:flex;justify-content:space-between"><span>${r[0]}</span><span>${r[1]}</span></div><div style="height:8px;background:rgba(255,255,255,.15);border-radius:6px;overflow:hidden"><div class="wd" style="--w:${r[1]};--d:${.6+k*.3}s;height:100%;background:${r[2]};border-radius:6px"></div></div>`).join("")}</div>`},
+{t:"Verilerin güvende ve her cihazda",d:"Giriş yapınca kayıtların bulutta saklanır, telefonda ve bilgisayarda aynı veriyi görürsün. Başkası senin verini göremez.",l:["Açılışta <b>PIN</b> sorulur; destekleyen cihazda <b>👆 parmak izi</b>","Şifreni unutursan giriş ekranında <b>Şifremi unuttum</b>","Başkası kullanacaksa üstteki <b>Çıkış</b> ile hesabından çık"],
+ i:`<div style="display:flex;flex-direction:column;align-items:center;gap:18px">${link("📱","☁️")}<div style="display:flex;align-items:center;gap:6px;font-size:34px"><span>☁️</span><div style="position:relative;width:70px;height:2px;background:rgba(255,255,255,.3)"><i class="tv" style="--d:.5s;position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:#8fbcff;left:0"></i></div><span>💻</span></div><div class="pu" style="font-size:40px">🔒</div></div>`},
+{t:"Görünümü seç",d:"Klasik gri tema ile koyu mavi Patron temasından istediğini seç.",l:["Üstteki <b>🎨</b> butonu temayı değiştirir","Klasik temada <b>🌙</b> ile karanlık mod da var"],
+ i:`<div style="display:flex;gap:14px;align-items:center"><div class="pop" style="width:112px;height:150px;border-radius:16px;background:#aeb0b5;padding:10px"><div style="background:#f1f1f3;border-radius:10px;height:34px;margin-bottom:8px"></div><div style="background:#f1f1f3;border-radius:10px;height:34px;margin-bottom:8px"></div><div style="color:#1b1d22;font-size:12px;text-align:center;font-weight:800">Klasik</div></div><div style="position:relative;width:70px;height:34px;border-radius:20px;background:rgba(255,255,255,.2)"><i class="tg" style="position:absolute;top:4px;width:26px;height:26px;border-radius:50%;background:#fff"></i></div><div class="pop" style="--d:.3s;width:112px;height:150px;border-radius:16px;background:linear-gradient(160deg,#071330,#123a82);padding:10px;border:1px solid rgba(255,255,255,.2)"><div style="background:linear-gradient(135deg,#0f9d58,#2ecc71);border-radius:10px;height:34px;margin-bottom:8px"></div><div style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:10px;height:34px;margin-bottom:8px"></div><div style="font-size:12px;text-align:center;font-weight:800">Patron</div></div></div>`},
+{t:"Hazırsın!",d:"İlk adım: bir hesap ekle ve ilk gelirini kaydet. Takıldığında ❔ butonundan bu turu tekrar açabilirsin.",l:[],
+ i:`<svg width="150" height="150" viewBox="0 0 150 150"><circle class="pop" cx="75" cy="75" r="62" fill="rgba(46,204,113,.2)" stroke="#2ecc71" stroke-width="5"/><path class="ck" style="--d:.5s" d="M45 78l20 20 42-48" fill="none" stroke="#2ecc71" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
+];
+let n=0,root;
+function build(){root=document.createElement("div");root.id="tour";
+ root.innerHTML='<div class="tr-top"><b>CÜZDANIM</b><button id="trSkip">Atla</button></div><div class="tr-body">'+SL.map(s=>'<div class="tr-s"><div class="tr-ill">'+s.i+'</div><h2>'+s.t+'</h2><p>'+s.d+'</p><ul>'+s.l.map(x=>'<li>'+x+'</li>').join("")+'</ul></div>').join("")+'</div><div class="tr-bot"><button class="g" id="trPrev">Geri</button><div class="tr-dots">'+SL.map((_,k)=>'<i data-k="'+k+'"></i>').join("")+'</div><button id="trNext">İleri</button></div>';
+ document.body.appendChild(root);
+ g("trSkip").onclick=close;g("trPrev").onclick=()=>show(n-1);g("trNext").onclick=()=>n===SL.length-1?close():show(n+1);
+ root.querySelector(".tr-dots").onclick=e=>{const k=e.target.dataset&&e.target.dataset.k;if(k!==undefined)show(+k)};
+ let x0=null;root.addEventListener("touchstart",e=>{x0=e.touches[0].clientX},{passive:true});root.addEventListener("touchend",e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>60)show(n+(dx<0?1:-1))},{passive:true});}
+function show(k){if(k<0||k>=SL.length)return;n=k;root.querySelectorAll(".tr-s").forEach((s,j)=>{s.classList.toggle("act",j===k);s.classList.toggle("pv",j<k);if(j===k)s.scrollTop=0});
+ root.querySelectorAll(".tr-dots i").forEach((d,j)=>d.classList.toggle("on",j===k));g("trPrev").disabled=k===0;g("trNext").textContent=k===SL.length-1?"Başla":"İleri";g("trSkip").style.visibility=k===SL.length-1?"hidden":"visible"}
+function open(){if(!root)build();root.classList.add("on");show(0)}
+function close(){try{localStorage.setItem(K,"1")}catch(e){}if(root)root.classList.remove("on")}
+document.addEventListener("keydown",e=>{if(!root||!root.classList.contains("on"))return;if(e.key==="ArrowRight")show(n+1);else if(e.key==="ArrowLeft")show(n-1);else if(e.key==="Escape")close()});
+window.cuzdanimTur=open;
+const cb=g("cikisBtn");if(cb){const b=document.createElement("button");b.id="tourBtn";b.textContent="❔";b.title="Tanıtım turu";b.style.cssText="margin-left:8px;padding:6px 10px;border:1px solid #9fa2a8;border-radius:8px;background:#e2e3e6;color:#1b1d22;font-size:13px;font-weight:700;cursor:pointer;order:3;flex:none";b.onclick=open;cb.insertAdjacentElement("beforebegin",b)}
+let seen=false;try{seen=!!localStorage.getItem(K)}catch(e){}
+if(!seen){const t=setInterval(()=>{if(!document.documentElement.classList.contains("kilit")){clearInterval(t);open()}},700)}
+})();
+</script>
+<style id="asist-css">
+#asBtn{position:fixed;left:14px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:99980;width:56px;height:56px;border-radius:50%;border:0;background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;font-size:26px;cursor:pointer;box-shadow:0 8px 24px rgba(29,78,216,.55)}
+html.t-patron #asBtn{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+@media(min-width:900px){html.t-patron #asBtn{bottom:22px;left:252px}}
+html.kilit #asBtn,html.kilit #asP{display:none!important}
+html.dark #asBtn,html.dark #asP{filter:invert(1) hue-rotate(180deg)}
+#asP{position:fixed;inset:0;z-index:99981;display:none;flex-direction:column;background:#f3f6fd;color:#0f1f4d;font-family:inherit}
+#asP.on{display:flex}
+@media(min-width:700px){#asP{inset:auto 16px 16px auto;width:420px;height:min(700px,calc(100vh - 32px));border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden}}
+.as-h{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;background:linear-gradient(135deg,#0b2150,#1d4ed8);color:#fff}
+@media(min-width:700px){.as-h{padding-top:12px}}
+.as-h b{flex:1;font-size:16px}.as-h small{display:block;font-weight:400;opacity:.8;font-size:11px}
+.as-h button{background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:10px;padding:7px 11px;font-weight:700;font-size:13px;cursor:pointer}
+#asM{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.as-u{align-self:flex-end;background:#1d4ed8;color:#fff;padding:9px 13px;border-radius:16px 16px 4px 16px;max-width:85%;font-size:14px}
+.as-a{align-self:flex-start;background:#fff;padding:12px 13px;border-radius:16px 16px 16px 4px;max-width:96%;font-size:14px;line-height:1.5;box-shadow:0 2px 8px rgba(15,31,77,.1)}
+.as-a h4{margin:0 0 6px;font-size:15px}
+.as-a ol{margin:6px 0 6px 18px;padding:0}.as-a li{margin:4px 0}
+.as-tip{background:#fff7dd;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:13px;color:#6b4b00}
+.as-ch{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.as-ch button{background:#e3ebff;color:#1e3a8a;border:1px solid #c7d4f0;border-radius:18px;padding:7px 12px;font-size:13px;font-weight:700;cursor:pointer;text-align:left}
+.as-ch button.go{background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;border-color:#2f6bff}
+.as-in{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid #d5dbe8}
+.as-in input{flex:1;border:1px solid #c7d4f0;border-radius:22px;padding:11px 14px;font-size:16px;background:#f3f6fd;color:#0f1f4d;min-width:0}
+.as-in button{border:0;border-radius:50%;width:44px;height:44px;background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;font-size:18px;cursor:pointer}
+.as-dots i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#8fa6d8;margin:0 2px;animation:asD 1s infinite}
+.as-dots i:nth-child(2){animation-delay:.2s}.as-dots i:nth-child(3){animation-delay:.4s}
+@keyframes asD{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+.as-img{margin:8px 0;border:1px solid #c7d4f0;border-radius:12px;overflow:hidden;background:#071330}
+.as-cap{background:#e3ebff;color:#4a5b82;font-size:11px;padding:4px 8px;text-align:center}
+.as-m{padding:8px;color:#e8eeff;font-size:10.5px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(160deg,#071330,#123a82)}
+.as-r{display:flex;align-items:center;gap:6px}
+.as-w{display:flex;flex-wrap:wrap;gap:4px}
+.as-b,.as-p{font-style:normal;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:4px 7px;white-space:nowrap}
+.as-p{border-radius:12px}
+.as-on{background:#2f6bff;border-color:#2f6bff}
+.as-k{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.as-k i{font-style:normal;border-radius:9px;padding:7px 8px;font-weight:700}
+.as-f{background:#fff;color:#0f1f4d;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:5px}
+.as-f div{display:flex;justify-content:space-between;gap:8px;border:1px solid #c7d4f0;border-radius:7px;padding:5px 8px;background:#f3f6fd}
+.as-f div span:first-child{color:#4a5b82}
+.as-bt{text-align:center;color:#fff;background:#1d4ed8;border-radius:8px;padding:6px;font-weight:800;font-style:normal;display:block}
+.as-t{display:grid;grid-auto-flow:column;gap:3px;background:#0a1630;border-radius:8px;padding:4px}
+.as-t i{font-style:normal;text-align:center;padding:5px 2px;border-radius:6px;font-size:9.5px}
+.as-bar{height:30px;display:flex;align-items:flex-end;gap:4px;padding:4px 6px}
+.as-bar i{flex:1;background:#2ecc71;border-radius:3px 3px 0 0}
+.as-hl{outline:2px solid #ffd43b;outline-offset:1px;animation:asH 1.1s infinite;position:relative;z-index:1}
+@keyframes asH{0%,100%{box-shadow:0 0 0 0 rgba(255,212,59,.7)}50%{box-shadow:0 0 0 6px rgba(255,212,59,0)}}
+</style>
+<script>
+(function(){
+const g=id=>document.getElementById(id);
+const norm=s=>String(s).toLocaleLowerCase("tr-TR").replace(/ç/g,"c").replace(/ğ/g,"g").replace(/ı/g,"i").replace(/ö/g,"o").replace(/ş/g,"s").replace(/ü/g,"u").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+const H=(id,on)=>on&&on.includes(id)?" as-hl":"";
+const fr=(x,c)=>'<div class="as-img">'+x+'<div class="as-cap">'+(c||"Örnek görünüm")+'</div></div>';
+const home=on=>fr('<div class="as-m"><div class="as-r" style="justify-content:space-between"><b>👛 Cüzdanım</b><span><i class="as-p'+H("yil",on)+'">2026 ▾</i> <i class="as-p'+H("cikis",on)+'">Çıkış</i></span></div><div class="as-w">'+[["f1","F1 Gelir Ekle"],["f2","F2 Gider Ekle"],["f3","F3 Hesap Ekle"],["f4","F4 Günlük Borç"],["f5","F5 Kategori Gider"],["f6","F6 Kategori Gelir"],["f7","F7 Son Hareketler"],["geri","↩ Geri Al"],["ileri","↪ İleri Al"]].map(x=>'<i class="as-b'+H(x[0],on)+'">'+x[1]+'</i>').join("")+'</div><div class="as-w">'+["Eyl","Eki","Kas","Ara"].map((a,k)=>'<i class="as-p'+(k===2?" as-on":"")+H("ay",on)+'">'+a+'</i>').join("")+'</div><div class="as-k'+H("kpi",on)+'"><i style="background:#0f9d58">Bu Ay Gelir<br>₺2.870</i><i style="background:#d92d20">Bu Ay Gider<br>₺25.782</i><i style="background:#1d4ed8">Bu Ay Net<br>−₺22.912</i><i style="background:#f59e0b">Toplam Bakiye<br>₺1.121.332</i></div>'+tabs(on)+'</div>');
+const tabs=on=>'<div class="as-t">'+[["w","🏠 Cüzdan"],["p","💳 Ödemeler"],["y","📈 Yatırım"],["b","🤝 Borç/Alacak"],["r","📊 Raporlar"]].map(x=>'<i class="'+H(x[0],on)+'">'+x[1]+'</i>').join("")+'</div>';
+const tabm=on=>fr('<div class="as-m">'+tabs(on)+'</div>');
+const form=(on,t)=>fr('<div class="as-m"><div class="as-f"><b>'+(t||"Gider Ekle")+'</b>'+[["hesap","Hesap","Maaş Hesabı ▾"],["kat","Kategori","Market ▾"],["tutar","Tutar","450,00"],["tarih","Tarih","11.11.2026"],["acik","Açıklama","Haftalık alışveriş"]].map(x=>'<div class="'+H(x[0],on).trim()+'"><span>'+x[1]+'</span><span>'+x[2]+'</span></div>').join("")+'<i class="as-bt'+H("kaydet",on)+'">Kaydet</i></div></div>');
+const pay=on=>fr('<div class="as-m"><div class="as-f" style="font-size:10px"><div><b>Ödeme</b><b>Eki</b><b>Kas</b><b>Ara</b></div><div class="'+H("tutar",on).trim()+'"><span>Kredi Kartı</span><span>₺3.200</span><span class="'+H("odendi",on).trim()+'">✔ ödendi</span><span>—</span></div><div><span>Elektrik</span><span>₺450</span><span>₺480</span><span>—</span></div></div></div>');
+const rep=on=>fr('<div class="as-m"><div class="as-f"><b>Gelir / Gider · 2026</b><div class="as-bar"><i></i><i style="height:60%;background:#ff5a4d"></i><i style="height:80%"></i><i style="height:40%;background:#ff5a4d"></i><i style="height:95%"></i></div></div><div class="as-f'+H("limit",on)+'"><b>Aylık bütçe limiti</b><div><span>Market  ₺450 /</span><span>₺1.000</span></div></div><div class="as-f'+H("tekrar",on)+'"><b>Tekrarlayan işlemler</b><div><span>Kira · her ayın 1. günü</span><span>₺8.000</span></div></div><div class="as-f'+H("yedek",on)+'"><b>Dışa aktar ve yedek</b><div style="justify-content:flex-start;gap:6px"><span>Excel (CSV)</span><span>PDF</span><span>Yedek indir</span></div></div></div>');
+const login=on=>fr('<div class="as-m"><div class="as-f"><b>Giriş</b><div><span>E-posta</span><span>ornek@mail.com</span></div><div><span>Şifre</span><span>••••••</span></div><i class="as-bt">Giriş yap</i><i class="as-bt" style="background:#0f8a63">Hesap oluştur</i><span class="'+H("unut",on).trim()+'" style="text-align:center;color:#0f8a63;font-weight:800">Şifremi unuttum</span></div></div>');
+const topb=on=>fr('<div class="as-m"><div class="as-r" style="justify-content:space-between"><b>👛 Cüzdanım</b><span><i class="as-p'+H("tour",on)+'">❔</i> <i class="as-p'+H("tema",on)+'">🎨 Patron</i> <i class="as-p'+H("dark",on)+'">🌙</i> <i class="as-p'+H("cikis",on)+'">Çıkış</i></span></div></div>');
+const srch=on=>fr('<div class="as-m"><div class="as-f"><b>🔎 Ara / Filtrele</b><div class="'+H("q",on).trim()+'"><span>market</span><span></span></div><div style="justify-content:flex-start;gap:6px"><span>Tümü ▾</span><span>Min ₺</span><span>Maks ₺</span><span>Tarih</span></div><span style="color:#4a5b82">3 kayıt · Gider ₺1.350</span></div></div>');
+const sync=()=>fr('<div class="as-m" style="align-items:center;font-size:30px;padding:14px"><div>📱 ⇄ ☁️ ⇄ 💻</div><small style="font-size:11px">Aynı hesapla giriş yapan her cihaz aynı veriyi görür</small></div>');
+const inv=()=>fr('<div class="as-m"><div class="as-f"><b>Yatırımlar</b><div><span>Altın</span><span>+%12</span></div><div><span>Güncel fiyat</span><span>₺ girilir</span></div></div></div>');
+const debts=()=>fr('<div class="as-m"><div class="as-k"><i style="background:#d92d20">Borçlarım<br>₺104.984</i><i style="background:#0f9d58">Alacaklarım<br>₺12.300</i></div></div>');
+const tab=pg=>()=>{const b=document.querySelector('.pgb[data-pg="'+pg+'"]');if(b)b.click()};
+const kb=t=>()=>{tab("w")();setTimeout(()=>{const b=[...document.querySelectorAll(".kb")].find(x=>x.textContent.includes(t));if(b)b.click()},300)};
+const topbtn=id=>()=>{const b=g(id);if(b)b.click()};
+const KB=[
+{id:"gelir",t:"Gelir nasıl eklenir?",k:["gelir ekle","gelir gir","gelir kaydet","gelir yaz","maas gir","maas ekle","maas yat","para geldi","para girdi","kazanc","maas","gelir"],
+ s:["Cüzdan sekmesinde <b>F1 · Gelir Ekle</b> butonuna bas.","Hesabı (örn. Maaş Hesabı) ve kategoriyi seç.","Tutarı, tarihi ve istersen açıklamayı yaz.","<b>Kaydet</b>'e bas. Üstteki <b>Bu Ay Gelir</b> kutusu güncellenir."],img:[home(["f1"]),form(["hesap","tutar","kaydet"],"Gelir Ekle")],tip:"Yanlış girdiysen <b>↩ Geri Al</b> ile geri alabilirsin.",go:[["Gelir Ekle'yi aç",kb("Gelir Ekle")]],rel:["gider","geri"]},
+{id:"gider",t:"Gider nasıl eklenir?",k:["gider ekle","gider gir","gider kaydet","gider yaz","harcama","harcadim","market","masraf","fatura ode","para cikti","gider"],
+ s:["Cüzdan sekmesinde <b>F2 · Gider Ekle</b> butonuna bas.","Harcamanın yapıldığı hesabı seç (nakit/banka/kredi kartı).","Kategori (Market, Fatura...), tutar ve tarihi gir.","<b>Kaydet</b>'e bas. <b>Bu Ay Gider</b> kutusu güncellenir."],img:[home(["f2"]),form(["kat","tutar","kaydet"])],tip:"Kredi kartıyla harcadıysan hesabı kredi kartı seç, tutar kartın <b>borcuna</b> yansır.",go:[["Gider Ekle'yi aç",kb("Gider Ekle")]],rel:["gelir","kart","kategori"]},
+{id:"hesap",t:"Hesap (banka, kredi kartı, kredi) nasıl eklenir?",k:["hesap ekle","yeni hesap","hesap ac","banka ekle","kredi karti ekle","kart ekle","kredi ekle","hesap olustur"],
+ s:["<b>F3 · Hesap Ekle</b> butonuna bas.","Hesabın adını yaz (örn. Garanti KK) ve türünü seç.","Kaydet'e bas. Hesap, üstteki hesap sekmelerinde görünür.","Artık gelir/gider eklerken bu hesabı seçebilirsin."],img:[home(["f3"])],tip:"Kredi kartı ve kredilerde bakiye <b>borç</b> olarak izlenir.",go:[["Hesap Ekle'yi aç",kb("Hesap Ekle")]],rel:["hesapduzenle","kart"]},
+{id:"hesapduzenle",t:"Hesabı nasıl düzenler veya silerim?",k:["hesap sil","hesap duzenle","hesap adi degis","hesabi kaldir","hesap guncelle","hesabi sil"],
+ s:["Cüzdan sayfasını aşağı kaydır; hesap kartlarını göreceksin.","Kartın sağ üstündeki <b>✏️ kalem</b> ile düzenle, <b>🗑️ çöp kutusu</b> ile sil.","Silmeden önce Raporlar'dan <b>yedek</b> almanı öneririm."],img:[home([])],tip:"Silinen hesabın hareketleri etkilenebilir. Emin değilsen önce yedek al.",go:[["Cüzdan sayfasını aç",tab("w")]],rel:["yedek","hesap"]},
+{id:"hareket",t:"Yanlış girdiğim kaydı nasıl düzeltir veya silerim?",k:["kayit sil","hareket sil","islem sil","kayit duzelt","hareketi duzelt","islemi duzenle","yanlis girdim","kaydi degistir","tutar yanlis"],
+ s:["<b>F7 · Son Hesap Hareketleri</b> ile hareket listesini aç.","Düzeltmek istediğin satırı bul (gerekirse 🔎 Ara/Filtrele kullan).","Satırdaki <b>✏️</b> ile düzenle, <b>🗑️</b> ile sil."],img:[home(["f7"]),srch(["q"])],tip:"Hemen fark ettiysen <b>↩ Geri Al</b> en hızlısıdır.",go:[["Son Hareketleri aç",kb("Son Hesap")]],rel:["geri","ara"]},
+{id:"geri",t:"Geri Al / İleri Al ne işe yarar?",k:["geri al","ileri al","geri alma","iptal et","son islemi geri","undo"],
+ s:["Cüzdan sekmesinde <b>↩ Geri Al</b>'a bas: son yaptığın değişiklik geri alınır.","Vazgeçersen <b>↪ İleri Al</b> ile tekrar uygula.","<b>🕘 Bugünkü İşlemler</b> bugün girdiklerini listeler."],img:[home(["geri","ileri"])],tip:"Birkaç adım geriye kadar çalışır. Çıkış yapınca sıfırlanır.",go:[["Cüzdan sayfasını aç",tab("w")]],rel:["hareket"]},
+{id:"ay",t:"Ay ve yılı nasıl değiştiririm?",k:["ay degis","ay sec","yil degis","yil sec","gecen ay","onceki ay","baska ay","aylik","ocak","subat","mart","nisan","mayis","haziran","temmuz","agustos","eylul","ekim","kasim","aralik"],
+ s:["Üstteki <b>yıl kutusundan</b> yılı seç.","Ay butonlarından (Ocak, Şubat...) ilgili aya dokun.","Özet kutuları ve listeler seçtiğin aya göre güncellenir."],img:[home(["yil","ay"])],tip:"Aya göre bütün kutular değişir, toplam bakiye hep güncel kalır.",go:[["Cüzdan sayfasını aç",tab("w")]],rel:["ozet"]},
+{id:"ara",t:"Kayıtlarda nasıl arama yaparım?",k:["ara","arama","filtre","bul","kayit bul","tutara gore","tarihe gore","kategoriye gore ara","sorgula"],
+ s:["Cüzdan sekmesinde <b>🔎 Ara / Filtrele</b> kartına git.","Açıklama, kategori, hesap ya da tutar yaz.","İstersen tür (gelir/gider), tutar aralığı veya tarih aralığı seç.","Altta kayıt sayısı ve gelir/gider toplamı görünür."],img:[srch(["q"])],tip:"Arama bütün yılları tarar, sadece seçili ayı değil.",go:[["Cüzdan sayfasını aç",tab("w")]],rel:["hareket","kategori"]},
+{id:"ozet",t:"Üstteki renkli kutular ne anlama geliyor?",k:["kutu","ozet","anlama gel","bu ay net","toplam bakiye","bakiye ne","yesil kirmizi","renkli","net ne"],
+ s:["<b>Yeşil · Bu Ay Gelir:</b> seçili ayda kazandıkların.","<b>Kırmızı · Bu Ay Gider:</b> seçili ayda harcadıkların.","<b>Mavi · Bu Ay Net:</b> gelir eksi gider.","<b>Turuncu · Toplam Bakiye:</b> tüm hesapların toplamı, altında toplam borç."],img:[home(["kpi"])],tip:"Net eksi ise o ay gelirinden fazla harcamışsın demektir.",go:[["Cüzdan sayfasını aç",tab("w")]],rel:["kart","kategori"]},
+{id:"kart",t:"Kart ve kredi borcumu nasıl takip ederim?",k:["borc takip","kart borcu","kredi borcu","toplam borc","gunluk borc","guncel borc","borcum ne kadar","borc ne kadar","f4"],
+ s:["Hesap kartlarındaki <b>Güncel Borç</b> satırı her kartın borcunu gösterir.","<b>F4 · Günlük Toplam Borç</b> ile borcun gün gün nasıl değiştiğini gör.","Kartla harcama yapınca borç artar; ödeme (gelir/transfer) girince azalır."],img:[home(["f4"])],tip:"Üstteki turuncu kutuda <b>Toplam Borç</b> da yazar.",go:[["Günlük Borç'u aç",kb("Günlük Toplam")]],rel:["odemeler","borcalacak"]},
+{id:"kategori",t:"Hangi kategoriye ne kadar harcadım?",k:["kategori","kategoriye gore","nereye harcadim","dokum","f5","f6","kategori bazinda","dagilim"],
+ s:["<b>F5 · Kategori Bazında Giderler</b> butonuna bas: harcamaların kategoriye göre dökümü açılır.","Gelirler için <b>F6</b>'yı kullan.","Grafikli görünüm için <b>Raporlar</b> sekmesine bak."],img:[home(["f5","f6"])],tip:"Gider eklerken doğru kategori seçmek raporları doğru yapar.",go:[["Kategori giderlerini aç",kb("Kategori Bazında Giderler")],["Raporlar'ı aç",tab("r")]],rel:["rapor","butce"]},
+{id:"odemeler",t:"Ödemeler sayfası nasıl kullanılır?",k:["odemeler","odeme sayfasi","aylik odeme","taksit","fatura takip","odeme ekle","odendi","odeme tablosu","kredi karti odeme"],
+ s:["Alttaki/yandaki <b>Ödemeler</b> sekmesine geç.","Kredi kartı, fatura gibi kalemleri ekle ve ödeme gününü yaz (örn. 8).","İlgili ayın hücresine tutarı gir.","Ödeyince hücreyi <b>ödendi</b> olarak işaretle."],img:[tabm(["p"]),pay(["tutar","odendi"])],tip:"Ödenmemiş tutar girilmiş kalemler için yaklaşan ödeme uyarısı çıkar.",go:[["Ödemeler'i aç",tab("p")]],rel:["hatirlat","kart"]},
+{id:"hatirlat",t:"Ödeme hatırlatıcısı nasıl çalışır?",k:["hatirlat","uyari","uyar","bildirim","yaklasan","son odeme","kac gun once","alarm","zamani gel"],
+ s:["Ödemeler sayfasında kalemin <b>gününü</b> ve ayın <b>tutarını</b> gir.","Ödeme günü yaklaşınca ana sayfanın üstünde <b>⏰ uyarı</b> çıkar.","Kaç gün önceden uyaracağını <b>Raporlar → Ödeme hatırlatıcıları</b> bölümünden değiştir."],img:[rep([])],tip:"Telefona bildirim, uygulama kapalıyken gelmez. Uyarı uygulamayı açınca görünür. Son ödeme günü olarak gün alanındaki son sayı kullanılır (1-8 → 8).",go:[["Raporlar'ı aç",tab("r")]],rel:["odemeler"]},
+{id:"yatirim",t:"Yatırımlarımı nasıl takip ederim?",k:["yatirim","altin","hisse","borsa","fon","portfoy","kar zarar","fiyat gir","guncel fiyat"],
+ s:["<b>Yatırımlar</b> sekmesine geç.","Aldığın yatırımı (adet, fiyat) kaydet.","Güncel fiyatı girdikçe değer ve kâr/zarar hesaplanır."],img:[tabm(["y"]),inv()],tip:"Fiyatlar otomatik çekilmez, güncel fiyatı kendin girersin.",go:[["Yatırımlar'ı aç",tab("y")]],rel:["rapor"]},
+{id:"borcalacak",t:"Borç ve alacaklarımı nasıl tutarım?",k:["alacak","borclarim","kime borc","kimden alacak","kisi borc","alacaklarim","borc alacak","verecek"],
+ s:["<b>Borçlarım ve Alacaklarım</b> sekmesine geç.","Kişi adı, tutar ve tarih yazarak kayıt ekle.","Ödeme/tahsilat oldukça kaydı güncelle."],img:[tabm(["b"]),debts()],tip:"Kart ve kredi borçların bu sayfada değil, Cüzdan sayfasındaki hesap kartlarında izlenir.",go:[["Borç/Alacak'ı aç",tab("b")]],rel:["kart"]},
+{id:"rapor",t:"Grafikleri ve raporları nerede görürüm?",k:["rapor","grafik","cizelge","analiz","istatistik","aylik gelir gider","nasil harcadim"],
+ s:["<b>Raporlar</b> sekmesine geç.","Aylık gelir-gider grafiği, birikimli net, kategori dağılımı ve hesap bazında borç görünür.","Kategori dağılımı için sağ üstten ayı seç."],img:[tabm(["r"]),rep([])],tip:"Veriler girildikçe grafikler dolar. Yeni hesapta başlangıçta boş görünür.",go:[["Raporlar'ı aç",tab("r")]],rel:["butce","excel"]},
+{id:"butce",t:"Bütçe limiti nasıl koyarım?",k:["butce","limit","harcama siniri","asma","cok harcama","sinir koy"],
+ s:["<b>Raporlar → Aylık bütçe limiti</b> bölümüne git.","Kategorinin yanındaki kutuya limit tutarını yaz.","Kutudan çıkınca kaydolur. %80'e gelince turuncu, aşınca kırmızı olur.","Ana sayfanın üstünde de uyarı görünür."],img:[rep(["limit"])],tip:"Limit seçtiğin ay için harcamayla karşılaştırılır.",go:[["Raporlar'ı aç",tab("r")]],rel:["rapor"]},
+{id:"tekrar",t:"Her ay aynı işlemi otomatik nasıl eklerim?",k:["tekrarlayan","her ay","otomatik ekle","kira","aidat","duzenli","sabit gider","maas otomatik","tekrar eden"],
+ s:["<b>Raporlar → Tekrarlayan işlemler</b> bölümüne git.","Tür, hesap, kategori, tutar, ayın günü ve başlangıç ayını gir, <b>Ekle</b>'ye bas.","Uygulamayı açtığında günü gelen kayıt otomatik eklenir."],img:[rep(["tekrar"])],tip:"Oluşan kaydı silersen aynı ay için tekrar eklenmez. Başlangıçtan önceki aylar için kayıt oluşmaz.",go:[["Raporlar'ı aç",tab("r")]],rel:["butce"]},
+{id:"excel",t:"Excel veya PDF çıktısı nasıl alırım?",k:["excel","csv","pdf","yazdir","cikti","disa aktar","indir","tablo al"],
+ s:["<b>Raporlar → Dışa aktar ve yedek</b> bölümüne git.","<b>Excel (CSV) indir</b>: hareketlerin tablosu iner.","<b>PDF / Yazdır</b>: yazdırma penceresinden PDF olarak kaydet."],img:[rep(["yedek"])],tip:"Android uygulamasında indirme çalışmayabilir. Web sürümünden yap.",go:[["Raporlar'ı aç",tab("r")]],rel:["yedek"]},
+{id:"yedek",t:"Yedek nasıl alınır ve geri yüklenir?",k:["yedek","geri yukle","yedekten","veri kaybi","yedekle","json","verilerimi sakla"],
+ s:["<b>Raporlar → Dışa aktar ve yedek</b> bölümüne git.","<b>Yedek indir (JSON)</b> ile dosyayı kaydet.","Geri yüklemek için <b>Yedekten geri yükle</b> deyip dosyayı seç; onayladıktan sonra veriler yedektekiyle değişir."],img:[rep(["yedek"])],tip:"Geri yükleme mevcut verinin üzerine yazar. Yedek yalnızca Cüzdan verilerini kapsar, Yatırımlar ayrıdır.",go:[["Raporlar'ı aç",tab("r")]],rel:["excel"]},
+{id:"giris",t:"Giriş yapma ve hesap oluşturma",k:["giris yap","hesap olustur","kayit ol","uye ol","e posta","eposta","nasil giris","giris ekrani","kullanici ac"],
+ s:["Giriş ekranında e-posta adresini ve şifreni yaz.","Hesabın yoksa <b>Hesap oluştur</b>'a bas.","Hesabın varsa <b>Giriş yap</b>'a bas. Verilerin bulutta geri gelir."],img:[login([])],tip:"Yeni hesap boş başlar. Her kullanıcının verisi birbirinden ayrıdır.",go:[],rel:["sifre","cikis"]},
+{id:"sifre",t:"Şifremi unuttum, ne yapacağım?",k:["sifre unut","sifremi unut","sifre sifirla","sifre degis","parola","giremiyorum","sifre bilmiyorum"],
+ s:["Giriş ekranında e-posta adresini yaz.","<b>Şifremi unuttum</b>'a bas.","E-postana gelen bağlantıdan yeni şifre belirle (spam klasörüne de bak).","Yeni şifrenle giriş yap."],img:[login(["unut"])],tip:"E-posta gelmezse adresin doğru yazıldığından emin ol, birkaç dakika bekle.",go:[],rel:["giris"]},
+{id:"cikis",t:"Çıkış yapma ve başka kullanıcı girişi",k:["cikis","baska kullanici","hesap degistir","oturum kapat","kullanici degistir","baskasi girecek","farkli hesap","baska biri","baska kisi","baska biri girecek","esim kullanacak"],
+ s:["Üstteki <b>Çıkış</b> butonuna bas ve onayla.","Cihazdaki yerel kopya silinir (verilerin hesabında güvende kalır).","Giriş ekranında diğer kişi kendi e-posta ve şifresiyle girer."],img:[topb(["cikis"])],tip:"Giriş yapmadan (sadece cihazda) kullandıysan çıkış yerel veriyi silmez ama bulutta yedek olmaz.",go:[],rel:["giris","guvenlik"]},
+{id:"pin",t:"PIN, parmak izi ve uygulama kilidi",k:["pin","kilit","parmak izi","yuz tanima","biyometrik","kilit ac","sifre koy","uygulama sifresi"],
+ s:["İlk açılışta bir <b>PIN</b> belirlersin, her açılışta sorulur.","Parmak izi için <b>Raporlar → Görünüm ve güvenlik → Parmak izi girişini etkinleştir</b>'e bas.","PIN yedek olarak her zaman durur."],img:[rep([])],tip:"PIN yalnızca o cihazda saklanır. Unutursan uygulama verisini temizleyip hesabınla tekrar girersin (bulutta verilerin durur). Giriş yapmadan kullandıysan veri silinir, dikkat.",go:[["Raporlar'ı aç",tab("r")]],rel:["guvenlik"]},
+{id:"tema",t:"Temayı veya karanlık modu nasıl değiştiririm?",k:["tema","karanlik","koyu","gece modu","renk","gorunum","patron","klasik","dark"],
+ s:["Üstteki <b>🎨</b> butonu Klasik ve Patron temaları arasında geçiş yapar.","Klasik temada <b>🌙</b> ile karanlık modu aç/kapat.","Tercihin cihazda hatırlanır."],img:[topb(["tema","dark"])],tip:"Patron temasında sekmeler yanda (bilgisayar) ya da altta (telefon) görünür.",go:[["Temayı değiştir",topbtn("themeBtn")]],rel:[]},
+{id:"senkron",t:"Veriler görünmüyor ya da senkron hatası var",k:["senkron","hata","gorunmuyor","veri gelmiyor","kayboldu","yuklenmiyor","calismiyor","permission","verilerim yok","baska cihaz","bulut","eski veri"],
+ s:["İnternet bağlantını kontrol et.","Aynı e-posta ve şifreyle giriş yaptığından emin ol (başka hesapta veri farklı olur).","Üstten <b>Çıkış</b> yapıp tekrar giriş yap.","Hata sürerse üstteki hata yazısını not et ve geliştiriciye ilet."],img:[sync()],tip:"<b>permission-denied</b> hatası Firebase güvenlik kuralından gelir. Kuralı yöneticinin düzeltmesi gerekir.",go:[],rel:["cikis","giris"]},
+{id:"guvenlik",t:"Verilerim güvende mi, başkası görebilir mi?",k:["guvenli","guvenlik","gizlilik","baskasi gorur","kimse goremez","veri guvenligi","kisisel veri","emniyet"],
+ s:["Verilerin hesabına bağlı olarak bulutta saklanır.","Güvenlik kuralı sayesinde her kullanıcı yalnızca kendi verisine ulaşır.","Uygulama PIN (ve destekleyen cihazlarda parmak izi) ile kilitlenir."],img:[sync()],tip:"Başkasına telefonu verirsen <b>Çıkış</b> yap ya da PIN'i kimseyle paylaşma.",go:[],rel:["pin","cikis"]},
+{id:"tur",t:"Tanıtım turunu tekrar izle",k:["tanitim","tur","nasil kullanilir","ne ise yarar","baslangic","ogretici","yardim","ilk kez","rehber","anlat"],
+ s:["Üstteki <b>❔</b> butonuna bas.","Animasyonlu turu baştan izleyebilirsin."],img:[topb(["tour"])],tip:"Bana da istediğin şeyi yazabilirsin, adım adım göstereyim.",go:[["Turu başlat",()=>{if(window.cuzdanimTur)window.cuzdanimTur()}]],rel:[]}
+];
+const SW=new Set(["nasil","ne","nedir","yapilir","yapabilirim","istiyorum","bir","bu","ile","mi","mu","miyim","musun","bana","icin","var","yok","ben","benim","lutfen","nerede","nereden","gibi","da","de","ki","ve","veya","olarak","gerekiyor","yapacagim","yapayim","edebilirim"]);
+function find(q){const nq=" "+norm(q)+" ",toks=nq.trim().split(" ").filter(w=>w&&!SW.has(w));const sc=KB.map(e=>{let s=0;e.k.forEach(x=>{if(nq.includes(x.includes(" ")?x:x))s+=x.includes(" ")?6:(x.length>=5?3:2)});e.t&&norm(e.t).split(" ").forEach(w=>{if(w.length>3&&toks.some(t=>t.startsWith(w.slice(0,5))))s+=1});return [e,s]}).sort((a,b)=>b[1]-a[1]);return sc}
+const box=()=>g("asM");
+function add(h,c){const d=document.createElement("div");d.className=c;d.innerHTML=h;box().appendChild(d);box().scrollTop=box().scrollHeight;return d}
+function chips(a,cls){return '<div class="as-ch">'+a.map(x=>'<button class="'+(cls||"")+'" data-q="'+x[0]+'">'+x[1]+'</button>').join("")+'</div>'}
+let acts=[];
+function answer(e){const gos=(e.go||[]).map(x=>{acts.push(x[1]);return '<button class="go" data-a="'+(acts.length-1)+'">'+x[0]+'</button>'}).join("");
+ const rel=(e.rel||[]).map(id=>KB.find(k=>k.id===id)).filter(Boolean).map(k=>[k.id,k.t]);
+ return '<h4>'+e.t+'</h4><ol>'+e.s.map(x=>'<li>'+x+'</li>').join("")+'</ol>'+(e.img||[]).join("")+(e.tip?'<div class="as-tip">💡 '+e.tip+'</div>':"")+(gos?'<div class="as-ch">'+gos+'</div>':"")+(rel.length?'<div style="margin-top:8px;font-size:12px;color:#4a5b82">İlgili sorular:</div>'+chips(rel.map(r=>["#"+r[0],r[1]])):"")}
+const start=[["#gelir","Gelir nasıl eklenir?"],["#gider","Gider nasıl eklenir?"],["#hesap","Hesap nasıl eklenir?"],["#odemeler","Ödemeleri nasıl takip ederim?"],["#butce","Bütçe limiti koymak"],["#yedek","Yedek nasıl alınır?"],["#sifre","Şifremi unuttum"],["#tema","Temayı değiştirmek"]];
+function ask(q){q=q.trim();if(!q)return;add(q.replace(/</g,"&lt;"),"as-u");const w=add('<span class="as-dots"><i></i><i></i><i></i></span>',"as-a");
+ setTimeout(()=>{const n=norm(q);let html;
+  if(/^(merhaba|selam|hey|iyi gunler|gunaydin|iyi aksamlar)/.test(n))html="Merhaba! 👋 Cüzdanım'ı kullanırken ne yapmak istiyorsan yaz, adım adım ve resimli göstereyim."+chips(start);
+  else if(/tesekkur|sagol|eyvallah/.test(n))html="Rica ederim! Başka bir şey yapmak istersen yaz. 😊";
+  else{const r=find(q),top=r[0];
+   if(top[1]>=3){html=answer(top[0]);const alt=r.slice(1,3).filter(x=>x[1]>=top[1]-1&&x[1]>=3);if(alt.length)html+='<div style="margin-top:8px;font-size:12px;color:#4a5b82">Şunu mu demek istedin?</div>'+chips(alt.map(x=>["#"+x[0].id,x[0].t]))}
+   else html="Bunu tam anlayamadım. 🤔 Cüzdanım ile ilgili şöyle sorabilirsin: <i>\"Gider nasıl eklenir?\"</i>, <i>\"Şifremi unuttum\"</i>, <i>\"Bütçe limiti\"</i>. Ya da bir konu seç:"+chips(start)}
+  w.innerHTML=html},550)}
+function pick(v){if(v[0]==="#"){const e=KB.find(k=>k.id===v.slice(1));if(!e)return;add(e.t,"as-u");const w=add('<span class="as-dots"><i></i><i></i><i></i></span>',"as-a");setTimeout(()=>{w.innerHTML=answer(e);box().scrollTop=box().scrollHeight},400)}else ask(v)}
+function build(){const b=document.createElement("button");b.id="asBtn";b.title="Soru-cevap asistanı";b.textContent="💬";document.body.appendChild(b);
+ const p=document.createElement("div");p.id="asP";p.innerHTML='<div class="as-h"><b>Cüzdanım Asistanı<small>Programla ilgili sorularını yanıtlar</small></b><button id="asNew">Yeni</button><button id="asX">✕</button></div><div id="asM"></div><div class="as-in"><input id="asI" placeholder="Ne yapmak istiyorsun? Yaz..." autocomplete="off"><button id="asS">➤</button></div>';document.body.appendChild(p);
+ const hi=()=>{box().innerHTML="";acts=[];add("Merhaba! 👋 Ben Cüzdanım asistanıyım. Programda bir şey yapmak istiyorsan sor, <b>adım adım ve resimli</b> göstereyim.","as-a").insertAdjacentHTML("beforeend",chips(start))};
+ hi();
+ b.onclick=()=>{p.classList.add("on");setTimeout(()=>g("asI").focus(),50)};g("asX").onclick=()=>p.classList.remove("on");g("asNew").onclick=hi;
+ const send=()=>{const i=g("asI"),v=i.value;i.value="";ask(v)};g("asS").onclick=send;g("asI").addEventListener("keydown",e=>{if(e.key==="Enter")send()});
+ p.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;if(t.dataset.q)pick(t.dataset.q);else if(t.dataset.a!==undefined){const f=acts[+t.dataset.a];p.classList.remove("on");try{f&&f()}catch(x){}}})}
+build();
 })();
 </script>
 </body></html>
