@@ -1703,10 +1703,21 @@ const futOf=a=>{const t0=todayS();return Math.max(0,S.tx.filter(t=>t.acc===a.id&
 const dSig=a=>a.type==="Borçlu"?0:(a.limit!==undefined&&a.kul!==undefined?a.limit-kulOf(a)-futOf(a):-bal(a.id)-futOf(a));
 const debtBox=a=>{const v=dSig(a);if(v<-0.005)return `<div class="debt"><span style="color:var(--ac)">Artı Bakiye</span><b style="color:var(--ac)">+${fmt(-v)}</b></div>`;return `<div class="debt${v>0.005?" on":""}"><span>Güncel Borç</span><b>${fmt(Math.max(0,v))}</b></div>`};
 const debtOf=a=>a.type==="Borçlu"?0:a.limit!==undefined&&a.kul!==undefined?Math.max(0,a.limit-kulOf(a)-futOf(a)):(bal(a.id)<0?Math.max(0,-bal(a.id)-futOf(a)):0);
-const ccPanel=a=>{const L=a.limit,U=Math.min(kulOf(a),L),used=Math.max(0,L-U),pct=L>0?Math.min(100,Math.max(0,used/L*100)):0,fu=futOf(a);
+const plansOf=a=>{const today=todayS(),g={};S.tx.forEach(t=>{if(t.acc!==a.id||!t.tk)return;const k=t.tk.p;(g[k]=g[k]||{n:t.tk.n,desc:String(t.desc||"").replace(/\s*\(\d+\/\d+\. taksit\)$/,""),items:[]}).items.push(t)});
+ return Object.values(g).map(p=>{const it=p.items.slice().sort((x,y)=>String(x.date).localeCompare(String(y.date)));const paid=it.filter(t=>String(t.date)<=today),rem=it.filter(t=>String(t.date)>today);
+  return {desc:p.desc,n:p.n,paid:paid.length,monthly:it[0].amt,remaining:rem.reduce((q,t)=>q+t.amt,0),nextDate:rem.length?String(rem[0].date):null}}).filter(p=>p.remaining>0.005).sort((x,y)=>String(x.nextDate).localeCompare(String(y.nextDate)))};
+const ccPanel=a=>{const L=a.limit,U=Math.min(kulOf(a),L),toplam=Math.max(0,L-U),pl=plansOf(a),kalanTk=pl.reduce((q,p)=>q+p.remaining,0),pct=L>0?Math.min(100,Math.max(0,toplam/L*100)):0;
+ const ay=todayS().slice(0,7),buAy=S.tx.filter(t=>t.acc===a.id&&t.kind==="gider"&&String(t.date).startsWith(ay)).reduce((q,t)=>q+t.amt,0);
  const last=S.tx.filter(t=>t.acc===a.id).sort((x,y)=>String(y.date).localeCompare(String(x.date))).slice(0,4);
  const cls=pct>=80?"hi":pct>=50?"mid":"";
- return `<div class="ccp"><div class="ccb"><div class="ccf ${cls}" style="width:${pct.toFixed(1)}%"></div></div><div class="ccr"><span>Kullanılan <b>${fmt(used)}</b></span><span>Kullanılabilir <b>${fmt(U)}</b></span></div>${fu>0.005?`<div class="ccr ccf2"><span>Bekleyen taksit</span><b>${fmt(fu)}</b></div>`:""}<div class="cch">Son hareketler</div>${last.length?last.map(t=>`<div class="ccl"><span>${esc(t.desc||t.cat||"")}<small>${esc(t.date||"")}</small></span><b style="color:${t.kind==="gelir"?"var(--ac)":"var(--rd)"}">${t.kind==="gelir"?"+":"-"}${fmt(t.amt)}</b></div>`).join(""):'<div class="ccl"><span>Hareket yok</span></div>'}</div>`};
+ const tile=(lb,v,c)=>`<div class="cct"><small>${lb}</small><b${c?` style="color:${c}"`:""}>${fmt(v)}</b></div>`;
+ const open=window.tpOpen===a.id;
+ const form=open?`<div class="tpf"><input id="tpd${a.id}" placeholder="Açıklama (örn. Lastik)"><input id="tpa${a.id}" inputmode="decimal" placeholder="Toplam tutar (örn. 3.000,00)"><input id="tpn${a.id}" type="number" min="2" placeholder="Taksit sayısı"><label>İlk taksit tarihi<input id="tpdt${a.id}" type="date" value="${todayS()}"></label><button class="tpb" data-tpadd="${a.id}">Kaydet</button></div>`:"";
+ const plist=pl.length?pl.map(p=>`<div class="ccl"><span>${esc(p.desc)}<small>${p.paid}/${p.n} ödendi · aylık ${fmt(p.monthly)} · sonraki ${p.nextDate?p.nextDate.split("-").reverse().join("."):"-"}</small></span><b style="color:var(--rd)">${fmt(p.remaining)}</b></div>`).join(""):'<div class="ccl"><span>Aktif taksit planı yok</span></div>';
+ return `<div class="ccp"><div class="ccb"><div class="ccf ${cls}" style="width:${pct.toFixed(1)}%"></div></div>`+
+ `<div class="ccg">${tile("Toplam limit",L)}${tile("Toplam borç <i>(harcama + taksit)</i>",toplam,"var(--rd)")}${tile("Kullanılabilir limit",U,"var(--ac)")}${tile("Kalan taksit tutarı",kalanTk,kalanTk>0.005?"var(--rd)":"")}${tile("Bu ay harcanan",buAy)}</div>`+
+ `<div class="cch">Taksit planları <button class="tpb" data-tpt="${a.id}">${open?"Kapat":"+ Taksit planı ekle"}</button></div>${form}${plist}`+
+ `<div class="cch">Son hareketler</div>${last.length?last.map(t=>`<div class="ccl"><span>${esc(t.desc||t.cat||"")}<small>${esc(t.date||"")}</small></span><b style="color:${t.kind==="gelir"?"var(--ac)":"var(--rd)"}">${t.kind==="gelir"?"+":"-"}${fmt(t.amt)}</b></div>`).join(""):'<div class="ccl"><span>Hareket yok</span></div>'}</div>`};
 const limHtml=a=>a.limit===undefined?"":`<div class="ln"><span>Tanımlı Limit</span><b>${fmt(a.limit)}</b></div>`+(a.kul!==undefined?`<div class="ln"><span>Kullanılabilir Limit</span><b>${fmt(Math.min(kulOf(a),a.limit))}</b></div>`:"")+(futOf(a)>0.005?`<div class="ln"><span>Bekleyen Taksit (ekstreye girmemiş)</span><b>${fmt(futOf(a))}</b></div>`:"");
 const bal=id=>((S.accs.find(x=>x.id===id)||{}).open||0)+balTx(id);
 const icon=t=>t==="Borçlu"?'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>':t==="Kredi Kartı"?'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>':'<svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg>';
@@ -3313,4 +3324,39 @@ window.cuzdanimAnimate=animateAll;
 .ccl small{color:var(--mu);font-size:11px}
 .ccl b{white-space:nowrap}
 </style>
+<style id="cc-tiles-css">
+.ccg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.cct{background:var(--in);border:1px solid var(--bd);border-radius:10px;padding:9px 10px}
+.cct small{display:block;color:var(--mu);font-size:11px;font-weight:700}
+.cct small i{font-style:normal;font-weight:400}
+.cct b{display:block;font-size:15px;margin-top:3px;color:var(--tx)}
+.cct:last-child{grid-column:1/-1}
+</style>
+<style id="tp-css">
+.tpf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0;padding:10px;border:1px dashed var(--bd);border-radius:10px;background:var(--card)}
+.tpf input{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--in);color:var(--tx);font:inherit;box-sizing:border-box}
+.tpf label{font-size:11px;color:var(--mu);display:flex;flex-direction:column;gap:3px}
+.tpf button{grid-column:1/-1;padding:9px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-weight:800;cursor:pointer}
+.tpb{margin-left:8px;padding:4px 9px;border:1px solid var(--bd);border-radius:8px;background:var(--in);color:var(--tx);font-size:11px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0}
+</style>
+<script id="tp-handler">
+(function(){
+window.tpOpen=null;
+document.addEventListener("click",function(e){
+ var t=e.target.closest("[data-tpt]");
+ if(t){var id=+t.dataset.tpt;window.tpOpen=window.tpOpen===id?null:id;render();return}
+ var b=e.target.closest("[data-tpadd]");
+ if(!b)return;
+ var id2=+b.dataset.tpadd;
+ var d=($("tpd"+id2).value||"").trim();
+ var amt=parseFloat(($("tpa"+id2).value||"").replace(/\./g,"").replace(",","."));
+ var n=parseInt($("tpn"+id2).value,10);
+ var date=$("tpdt"+id2).value;
+ if(!d||!(amt>0)||!(n>=2)||!date){alert("Açıklama, tutar, taksit sayısı (en az 2) ve ilk taksit tarihi gerekli.");return}
+ S.tx.push(...taksitUret({acc:id2,cat:"Diğer",amt:amt,date:date,desc:d},n,null));
+ window.tpOpen=null;
+ save();render();
+});
+})();
+</script>
 </body></html>
