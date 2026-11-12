@@ -3055,6 +3055,8 @@ const KB=[
  s:["İnternet bağlantını kontrol et.","Aynı e-posta ve şifreyle giriş yaptığından emin ol (başka hesapta veri farklı olur).","Üstten <b>Çıkış</b> yapıp tekrar giriş yap.","Hata sürerse üstteki hata yazısını not et ve geliştiriciye ilet."],img:[sync()],tip:"<b>permission-denied</b> hatası Firebase güvenlik kuralından gelir. Kuralı yöneticinin düzeltmesi gerekir.",go:[],rel:["cikis","giris"]},
 {id:"guvenlik",t:"Verilerim güvende mi, başkası görebilir mi?",k:["guvenli","guvenlik","gizlilik","baskasi gorur","kimse goremez","veri guvenligi","kisisel veri","emniyet"],
  s:["Verilerin hesabına bağlı olarak bulutta saklanır.","Güvenlik kuralı sayesinde her kullanıcı yalnızca kendi verisine ulaşır.","Uygulama PIN (ve destekleyen cihazlarda parmak izi) ile kilitlenir."],img:[sync()],tip:"Başkasına telefonu verirsen <b>Çıkış</b> yap ya da PIN'i kimseyle paylaşma.",go:[],rel:["pin","cikis"]},
+{id:"oto",t:"Otomatik günlük yedek ve geri yükleme",k:["otomatik yedek","gunluk yedek","yedekten don","verilerim silindi","verilerim bozuldu","eski haline","gecmis yedek","14 gun","yanlislikla sildim","geri getir"],
+ s:["Verilerin her gün uygulamayı <b>ilk açtığında</b> hesabında otomatik yedeklenir, son <b>14 gün</b> tutulur.","<b>Raporlar → Otomatik günlük yedek</b> bölümünde yedeklerin listelenir.","İstediğin günün yanındaki <b>Geri yükle</b>'ye bas ve onayla. Önce şu anki verinin güvenlik kopyası alınır.","İstersen <b>Şimdi yedekle</b> ile anında yedek alırsın."],img:[rep(["yedek"])],tip:"Yatırımlar sayfası bu yedeğe dahil değildir. Giriş yapmadan kullanıyorsan yedek alınmaz.",go:[["Raporlar'ı aç",tab("r")]],rel:["yedek","excel"]},
 {id:"tur",t:"Tanıtım turunu tekrar izle",k:["tanitim","tur","nasil kullanilir","ne ise yarar","baslangic","ogretici","yardim","ilk kez","rehber","anlat"],
  s:["Üstteki <b>❔</b> butonuna bas.","Animasyonlu turu baştan izleyebilirsin."],img:[topb(["tour"])],tip:"Bana da istediğin şeyi yazabilirsin, adım adım göstereyim.",go:[["Turu başlat",()=>{if(window.cuzdanimTur)window.cuzdanimTur()}]],rel:[]}
 ];
@@ -3093,4 +3095,33 @@ html.t-patron .kbar{position:fixed!important;left:auto!important;right:28px;top:
 html.t-patron .kbar .kb{width:100%;flex:none;justify-content:flex-start;padding:11px 14px;font-size:14px}
 }
 </style>
+<script id="oto-yedek">
+(function(){
+if(typeof firebase==="undefined")return;
+const g=id=>document.getElementById(id);let UID=null;
+async function ctx(){if(UID)return UID;if(!window.claude)return null;try{await window.claude.use("db");const u=await window.claude.use("user");UID=await u.id();return UID}catch(e){return null}}
+const tod=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const col=()=>firebase.firestore().collection("data/users/"+UID),dc=n=>firebase.firestore().doc("data/users/"+UID+"/"+n);
+async function list(){const sn=await col().get();return sn.docs.filter(d=>/^yedek-\d{4}-\d{2}-\d{2}$/.test(d.id)).map(d=>({id:d.id,tarih:d.id.slice(6),data:d.data()})).sort((a,b)=>b.id.localeCompare(a.id))}
+async function backup(force){if(!(await ctx()))return false;const d=dc("yedek-"+tod());if(!force){const s=await d.get();if(s.exists)return false}
+ await d.set({tarih:tod(),zaman:new Date().toISOString(),state:JSON.stringify(S),hesap:S.accs.length,hareket:S.tx.length});
+ const L=await list();for(const x of L.slice(14))await dc(x.id).delete();return true}
+function auto(){let n=0;const t=setInterval(async()=>{n++;const s=g("sync"),ok=s&&/senkron/i.test(s.textContent)&&!/hata|kapal|yerel/i.test(s.textContent);
+ if(ok&&S&&S.accs){clearInterval(t);try{await backup(false)}catch(e){}}else if(n>40)clearInterval(t)},3000)}
+setTimeout(auto,4000);
+async function draw(){const c=g("byCard");if(!c)return;const b=c.querySelector("#byL");
+ if(!(await ctx())){b.innerHTML="<small>Bulut yedeği için giriş yapmış olmalısın.</small>";return}
+ try{const L=await list();b.innerHTML=L.length?L.map(x=>'<div class="rrow"><div class="rtop"><span><b>'+x.tarih+'</b> · '+(x.data.hesap||0)+' hesap, '+(x.data.hareket||0)+' hareket</span><button class="rbtn" data-by="rs" data-id="'+x.id+'" style="margin:0;padding:5px 10px">Geri yükle</button></div></div>').join(""):"<small>Henüz yedek yok. Uygulamayı açtığında bugünün yedeği otomatik alınır.</small>"}
+ catch(e){b.innerHTML="<small>Yedekler okunamadı: "+((e&&e.code)||"hata")+"</small>"}}
+function mk(){const r=g("pgR");if(!r||g("byCard"))return;r.insertAdjacentHTML("beforeend",'<div class="card" id="byCard"><h2>Otomatik günlük yedek</h2><small style="color:var(--mu)">Verilerin her gün uygulamayı ilk açtığında hesabında saklanır, son 14 gün tutulur. Yatırımlar sayfası bu yedeğe dahil değildir.</small><div id="byL" style="margin:8px 0"><small>Yükleniyor...</small></div><button class="rbtn" data-by="now">Şimdi yedekle</button></div>');draw()}
+new MutationObserver(mk).observe(document.body,{childList:true,subtree:true});
+document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.closest("[data-by]");if(!b)return;const a=b.dataset.by;
+ if(a==="now"){b.disabled=true;try{await backup(true);alert("Yedek alındı")}catch(x){alert("Yedek alınamadı")}b.disabled=false;draw()}
+ else if(a==="rs"){try{const L=await list(),x=L.find(y=>y.id===b.dataset.id);if(!x||!x.data.state)return;
+  if(!confirm(x.tarih+" tarihli yedek geri yüklensin mi? Şu anki verilerin bu yedekle DEĞİŞTİRİLİR. Önce otomatik bir güvenlik kopyası alınır."))return;
+  await dc("oncesi-"+Date.now()).set({zaman:new Date().toISOString(),state:JSON.stringify(S)});
+  const all=(await col().get()).docs.filter(d=>d.id.startsWith("oncesi-")).map(d=>d.id).sort().reverse();for(const id of all.slice(5))await dc(id).delete();
+  const st=JSON.parse(x.data.state);if(!Array.isArray(st.accs)||!Array.isArray(st.tx))throw 0;S=st;fix();save();render();alert("Yedek geri yüklendi")}catch(err){alert("Geri yükleme başarısız")}}});
+})();
+</script>
 </body></html>
