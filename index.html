@@ -2830,7 +2830,7 @@ const setTh=c=>{try{localStorage.setItem(T,c)}catch(e){}ap()};
 const panel=document.createElement("div");panel.id="thP";
 panel.innerHTML='<div class="th-box"><button class="th-x" id="thX" aria-label="Kapat">✕</button><h3>Tema seç</h3><small>Beğendiğin temaya dokun, hemen uygulansın.</small><div class="th-grid">'+TH.map(t=>'<button class="th-opt" data-th="'+t[0]+'"><span class="th-sw" style="background:linear-gradient(135deg,'+t[2]+','+t[3]+')"><i style="background:'+t[4]+'"></i><i style="background:'+t[5]+'"></i></span><span class="th-nm">'+t[1]+'</span></button>').join("")+'</div></div>';
 document.body.appendChild(panel);
-panel.addEventListener("click",e=>{if(e.target===panel||e.target.closest("#thX")){panel.classList.remove("on");return}const o=e.target.closest(".th-opt");if(o){setTh(o.dataset.th);panel.classList.remove("on")}});
+panel.addEventListener("click",e=>{if(e.target===panel||e.target.closest("#thX")){panel.classList.remove("on");return}const o=e.target.closest(".th-opt");if(o){setTh(o.dataset.th);panel.classList.remove("on");setTimeout(()=>{if(window.cuzdanimAnimate)window.cuzdanimAnimate()},80)}});
 const d=document.getElementById("darkBtn")||document.getElementById("cikisBtn");
 if(d){const b=document.createElement("button");b.id="themeBtn";b.textContent="🎨 Temalar";b.style.cssText="margin-left:8px;padding:6px 10px;border:1px solid #9fa2a8;border-radius:8px;background:#e2e3e6;color:#1b1d22;font-size:12px;font-weight:700;cursor:pointer;order:3;flex:none";b.onclick=()=>panel.classList.add("on");(document.getElementById("darkBtn")?d.insertAdjacentElement("afterend",b):d.insertAdjacentElement("beforebegin",b))}
 ap();
