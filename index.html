@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr"><head>
-<script>try{if(localStorage.getItem("cuzdanim_theme")==="patron")document.documentElement.classList.add("t-patron")}catch(e){}</script>
+<script>try{var _t=localStorage.getItem("cuzdanim_theme");if(_t&&_t!=="classic")document.documentElement.classList.add("t-"+_t)}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
@@ -2750,6 +2750,43 @@ html.t-patron #sync{color:#9db0d8!important}
 html.t-patron #cikisBtn,html.t-patron #themeBtn{background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.28)!important}
 html.t-patron #darkBtn{display:none!important}
 html.t-patron.dark{filter:none!important;background:none!important}
+html.t-okyanus{--bg:#d7efe9;--card:#f4fbf9;--bd:#8cc9bb;--in:#e3f4ef;--tx:#0d2e2a;--mu:#3d6b63;--ac:#0b7a6a;--pt:#1f6f63;--pl2:#c9ebe2;--pl3:#e3f4ef;--plg:linear-gradient(180deg,#f2fbf8,#9fd9c9)}
+html.t-okyanus body{background:linear-gradient(160deg,#bfe9de,#5fb9a4) fixed}
+html.t-okyanus .card{background:linear-gradient(180deg,#ffffff,#e4f5f0)}
+html.t-okyanus #cikisBtn,html.t-okyanus #themeBtn{background:#e3f4ef!important;color:#0d2e2a!important;border-color:#8cc9bb!important}
+html.t-gece{--bg:#141826;--card:#1e2436;--bd:#343b52;--in:#262d42;--tx:#e8ebf5;--mu:#9aa3bd;--ac:#5ee0b0;--rd:#ff6b6b;--pt:#b8c0dc;--pl2:#2a3149;--pl3:#242b40;--plg:linear-gradient(180deg,#2d3550,#1d2337)}
+html.t-gece body{background:linear-gradient(160deg,#0d1020,#1b2140) fixed}
+html.t-gece .card{background:linear-gradient(180deg,#252c44,#1c2236)}
+html.t-gece #cikisBtn,html.t-gece #themeBtn{background:var(--plg)!important;color:var(--tx)!important;border-color:var(--bd)!important}
+html.t-gul{--bg:#f9e4eb;--card:#fff7fa;--bd:#e9b8c8;--in:#fbeef3;--tx:#3a1421;--mu:#8a4a5c;--ac:#c2456b;--rd:#d92d20;--pt:#a33a5b;--pl2:#f3cfdb;--pl3:#fbe9ef;--plg:linear-gradient(180deg,#fff,#f5c9d7)}
+html.t-gul body{background:linear-gradient(160deg,#fbd7e3,#e89ab3) fixed}
+html.t-gul .card{background:linear-gradient(180deg,#ffffff,#fbe3ec)}
+html.t-gul #cikisBtn,html.t-gul #themeBtn{background:var(--plg)!important;color:var(--tx)!important;border-color:var(--bd)!important}
+html.t-altin{--bg:#f7f0dc;--card:#fffbef;--bd:#d9c48a;--in:#f8f0d6;--tx:#2b2110;--mu:#7a6530;--ac:#a77a12;--rd:#c0392b;--pt:#8a6410;--pl2:#efe2b8;--pl3:#f8efd2;--plg:linear-gradient(180deg,#fffaea,#ecd9a0)}
+html.t-altin body{background:linear-gradient(160deg,#f3e4b5,#c9a14a) fixed}
+html.t-altin .card{background:linear-gradient(180deg,#fffdf5,#f6ead0)}
+html.t-altin #cikisBtn,html.t-altin #themeBtn{background:var(--plg)!important;color:var(--tx)!important;border-color:var(--bd)!important}
+html.t-lavanta{--bg:#e9e3f7;--card:#f8f6fd;--bd:#b9a8e0;--in:#eee9fa;--tx:#261a40;--mu:#5d4c86;--ac:#7048c4;--rd:#d92d20;--pt:#5a3ea3;--pl2:#dcd2f2;--pl3:#f1edfb;--plg:linear-gradient(180deg,#fbf9ff,#cfc0ee)}
+html.t-lavanta body{background:linear-gradient(160deg,#d9cdf3,#8f76d1) fixed}
+html.t-lavanta .card{background:linear-gradient(180deg,#ffffff,#eee8fb)}
+html.t-lavanta #cikisBtn,html.t-lavanta #themeBtn{background:var(--plg)!important;color:var(--tx)!important;border-color:var(--bd)!important}
+html.t-kiremit{--bg:#f3e0d2;--card:#fdf6f0;--bd:#d9a58a;--in:#f7e8dc;--tx:#3b1d10;--mu:#8a5a44;--ac:#b5502a;--rd:#c0392b;--pt:#8e3d1f;--pl2:#ecd0bd;--pl3:#f8e6d9;--plg:linear-gradient(180deg,#fff8f2,#ebc3a8)}
+html.t-kiremit body{background:linear-gradient(160deg,#f1d3bd,#c46f48) fixed}
+html.t-kiremit .card{background:linear-gradient(180deg,#fff9f4,#f6e0d0)}
+html.t-kiremit #cikisBtn,html.t-kiremit #themeBtn{background:var(--plg)!important;color:var(--tx)!important;border-color:var(--bd)!important}
+#thP{position:fixed;inset:0;z-index:99995;display:none;align-items:center;justify-content:center;background:rgba(10,14,24,.55);padding:16px}
+#thP.on{display:flex}
+#thP .th-box{position:relative;background:#f4f4f6;color:#1b1d22;border-radius:16px;padding:18px;max-width:560px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.35);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#thP h3{margin:0 0 4px;font-size:18px}
+#thP small{color:#4f525a}
+#thP .th-x{position:absolute;right:12px;top:10px;background:none;border:0;font-size:20px;cursor:pointer;color:#1b1d22}
+#thP .th-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+@media(min-width:620px){#thP .th-grid{grid-template-columns:repeat(4,1fr)}}
+#thP .th-opt{border:2px solid transparent;border-radius:12px;padding:0;background:#fff;cursor:pointer;text-align:left;overflow:hidden;font:inherit}
+#thP .th-opt.on{border-color:#1b1d22}
+#thP .th-sw{height:64px;display:flex;align-items:flex-end;gap:6px;padding:8px}
+#thP .th-sw i{width:16px;height:16px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+#thP .th-nm{display:block;font-weight:800;font-size:13px;padding:7px 9px;color:#1b1d22}
 html.t-patron .kb,html.t-patron .tb,html.t-patron .m{background:rgba(255,255,255,.1);color:#dbe6ff;border:1px solid rgba(255,255,255,.18);box-shadow:none}
 html.t-patron .tb.on,html.t-patron .m.on{background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;border-color:#2f6bff;box-shadow:0 4px 12px rgba(47,107,255,.45)}
 html.t-patron .card{background:#fff;border:0;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.28)}
@@ -2786,10 +2823,16 @@ html.t-patron #pkb{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 (function(){
 const T="cuzdanim_theme",H=document.documentElement,M={w:["🏠","Cüzdan"],p:["💳","Ödemeler"],y:["📈","Yatırım"],b:["🤝","Borç/Alacak"],f:["🏡","Fuzul"],r:["📊","Raporlar"]};
 document.querySelectorAll(".pgb").forEach(b=>{const m=M[b.dataset.pg]||["•",b.textContent.slice(0,9)];b.dataset.i=m[0];b.dataset.s=m[1]});
-const on=()=>{try{return localStorage.getItem(T)==="patron"}catch(e){return false}};
-const ap=()=>{H.classList.toggle("t-patron",on());const b=document.getElementById("themeBtn");if(b)b.textContent=on()?"🎨 Klasik":"🎨 Patron"};
+const TH=[["classic","Klasik","#c6c8cc","#8c8f95","#4f525a","#0f8a63"],["patron","Patron","#0b2150","#2f6bff","#2f6bff","#c9d6f5"],["okyanus","Okyanus","#bfe9de","#5fb9a4","#0b7a6a","#ffffff"],["gece","Gece","#0d1020","#1b2140","#5ee0b0","#7c8cff"],["gul","Gül","#fbd7e3","#e89ab3","#c2456b","#fff7fa"],["altin","Altın","#f3e4b5","#c9a14a","#a77a12","#fffbef"],["lavanta","Lavanta","#d9cdf3","#8f76d1","#7048c4","#f8f6fd"],["kiremit","Kiremit","#f1d3bd","#c46f48","#b5502a","#fdf6f0"]];
+const cur=()=>{try{const v=localStorage.getItem(T);return TH.some(t=>t[0]===v)?v:"classic"}catch(e){return "classic"}};
+const ap=()=>{const c=cur();TH.forEach(t=>H.classList.remove("t-"+t[0]));if(c!=="classic")H.classList.add("t-"+c);document.querySelectorAll(".th-opt").forEach(o=>o.classList.toggle("on",o.dataset.th===c))};
+const setTh=c=>{try{localStorage.setItem(T,c)}catch(e){}ap()};
+const panel=document.createElement("div");panel.id="thP";
+panel.innerHTML='<div class="th-box"><button class="th-x" id="thX" aria-label="Kapat">✕</button><h3>Tema seç</h3><small>Beğendiğin temaya dokun, hemen uygulansın.</small><div class="th-grid">'+TH.map(t=>'<button class="th-opt" data-th="'+t[0]+'"><span class="th-sw" style="background:linear-gradient(135deg,'+t[2]+','+t[3]+')"><i style="background:'+t[4]+'"></i><i style="background:'+t[5]+'"></i></span><span class="th-nm">'+t[1]+'</span></button>').join("")+'</div></div>';
+document.body.appendChild(panel);
+panel.addEventListener("click",e=>{if(e.target===panel||e.target.closest("#thX")){panel.classList.remove("on");return}const o=e.target.closest(".th-opt");if(o){setTh(o.dataset.th);panel.classList.remove("on")}});
 const d=document.getElementById("darkBtn")||document.getElementById("cikisBtn");
-if(d){const b=document.createElement("button");b.id="themeBtn";b.style.cssText="margin-left:8px;padding:6px 10px;border:1px solid #9fa2a8;border-radius:8px;background:#e2e3e6;color:#1b1d22;font-size:12px;font-weight:700;cursor:pointer;order:3;flex:none";b.onclick=()=>{try{localStorage.setItem(T,on()?"classic":"patron")}catch(e){}ap()};(document.getElementById("darkBtn")?d.insertAdjacentElement("afterend",b):d.insertAdjacentElement("beforebegin",b))}
+if(d){const b=document.createElement("button");b.id="themeBtn";b.textContent="🎨 Temalar";b.style.cssText="margin-left:8px;padding:6px 10px;border:1px solid #9fa2a8;border-radius:8px;background:#e2e3e6;color:#1b1d22;font-size:12px;font-weight:700;cursor:pointer;order:3;flex:none";b.onclick=()=>panel.classList.add("on");(document.getElementById("darkBtn")?d.insertAdjacentElement("afterend",b):d.insertAdjacentElement("beforebegin",b))}
 ap();
 })();
 </script>
@@ -3050,7 +3093,7 @@ const KB=[
 {id:"pin",t:"PIN, parmak izi ve uygulama kilidi",k:["pin","kilit","parmak izi","yuz tanima","biyometrik","kilit ac","sifre koy","uygulama sifresi"],
  s:["İlk açılışta bir <b>PIN</b> belirlersin, her açılışta sorulur.","Parmak izi için <b>Raporlar → Görünüm ve güvenlik → Parmak izi girişini etkinleştir</b>'e bas.","PIN yedek olarak her zaman durur."],img:[rep([])],tip:"PIN yalnızca o cihazda saklanır. Unutursan uygulama verisini temizleyip hesabınla tekrar girersin (bulutta verilerin durur). Giriş yapmadan kullandıysan veri silinir, dikkat.",go:[["Raporlar'ı aç",tab("r")]],rel:["guvenlik"]},
 {id:"tema",t:"Temayı veya karanlık modu nasıl değiştiririm?",k:["tema","karanlik","koyu","gece modu","renk","gorunum","patron","klasik","dark"],
- s:["Üstteki <b>🎨</b> butonu Klasik ve Patron temaları arasında geçiş yapar.","Klasik temada <b>🌙</b> ile karanlık modu aç/kapat.","Tercihin cihazda hatırlanır."],img:[topb(["tema","dark"])],tip:"Patron temasında sekmeler yanda (bilgisayar) ya da altta (telefon) görünür.",go:[["Temayı değiştir",topbtn("themeBtn")]],rel:[]},
+ s:["Üstteki <b>🎨</b> butonu tema penceresini açar, 8 temadan birini seçebilirsin.","Klasik temada <b>🌙</b> ile karanlık modu aç/kapat.","Tercihin cihazda hatırlanır."],img:[topb(["tema","dark"])],tip:"Patron temasında sekmeler yanda (bilgisayar) ya da altta (telefon) görünür.",go:[["Temayı değiştir",topbtn("themeBtn")]],rel:[]},
 {id:"senkron",t:"Veriler görünmüyor ya da senkron hatası var",k:["senkron","hata","gorunmuyor","veri gelmiyor","kayboldu","yuklenmiyor","calismiyor","permission","verilerim yok","baska cihaz","bulut","eski veri"],
  s:["İnternet bağlantını kontrol et.","Aynı e-posta ve şifreyle giriş yaptığından emin ol (başka hesapta veri farklı olur).","Üstten <b>Çıkış</b> yapıp tekrar giriş yap.","Hata sürerse üstteki hata yazısını not et ve geliştiriciye ilet."],img:[sync()],tip:"<b>permission-denied</b> hatası Firebase güvenlik kuralından gelir. Kuralı yöneticinin düzeltmesi gerekir.",go:[],rel:["cikis","giris"]},
 {id:"guvenlik",t:"Verilerim güvende mi, başkası görebilir mi?",k:["guvenli","guvenlik","gizlilik","baskasi gorur","kimse goremez","veri guvenligi","kisisel veri","emniyet"],
@@ -3122,6 +3165,131 @@ document.addEventListener("click",async e=>{const b=e.target.closest&&e.target.c
   await dc("oncesi-"+Date.now()).set({zaman:new Date().toISOString(),state:JSON.stringify(S)});
   const all=(await col().get()).docs.filter(d=>d.id.startsWith("oncesi-")).map(d=>d.id).sort().reverse();for(const id of all.slice(5))await dc(id).delete();
   const st=JSON.parse(x.data.state);if(!Array.isArray(st.accs)||!Array.isArray(st.tx))throw 0;S=st;fix();save();render();alert("Yedek geri yüklendi")}catch(err){alert("Geri yükleme başarısız")}}});
+})();
+</script>
+<style id="cz-anim-css">
+@keyframes cz-in{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes cz-pop{0%{transform:scale(1)}40%{transform:scale(1.12)}70%{transform:scale(.97)}100%{transform:scale(1)}}
+.cz-in{animation:cz-in .5s cubic-bezier(.2,.8,.2,1) both}
+.cz-pop{display:inline-block;animation:cz-pop .42s ease-out}
+</style>
+<script id="intro-count">
+(function(){
+var D=900, token=0, initialDone=false, timer=null;
+var ROOTS=["pgW","pgP","pgB","pgY","pgR","pgF"];
+var CUR=/[+-]?\s?(?:₺\s?\d[\d.]*(?:,\d+)?|\d[\d.]*(?:,\d+)?\s?₺)/g;
+var NUM=/\d[\d.]*(?:,\d+)?/;
+var MAXT=300;
+var fmtCache={};
+function reduced(){return window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches}
+function parseTok(tok){
+ var s=tok.match(NUM)[0], dec=(s.split(",")[1]||"").length;
+ var abs=parseFloat(s.replace(/\./g,"").replace(",","."))||0;
+ return {numStr:s, dec:dec, abs:abs};
+}
+function fmtNum(v,dec){
+ var k=dec; if(!fmtCache[k])fmtCache[k]=new Intl.NumberFormat("tr-TR",{minimumFractionDigits:dec,maximumFractionDigits:dec});
+ return fmtCache[k].format(v);
+}
+function visibleRoots(){
+ return ROOTS.map(function(id){return document.getElementById(id)}).filter(function(el){return el&&el.offsetParent!==null});
+}
+function collect(){
+ var out=[];
+ visibleRoots().forEach(function(root){
+  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null), n;
+  while((n=w.nextNode())){
+   var t=n.nodeValue, toks=[], re=new RegExp(CUR.source,"g"), m;
+   if(t.indexOf("₺")<0)continue;
+   while((m=re.exec(t))){
+    var info=parseTok(m[0]);
+    if(info.abs!==0)toks.push({idx:m.index,text:m[0],info:info});
+   }
+   if(toks.length)out.push({node:n,orig:t,toks:toks});
+  }
+  root.querySelectorAll(".sv").forEach(function(el){
+   var c=el.firstChild;
+   if(!c||c.nodeType!==3||el.querySelector("*"))return;
+   var t=c.nodeValue.trim();
+   if(!/^[+-]?\d[\d.]*(,\d+)?$/.test(t))return;
+   var info=parseTok(t);
+   if(info.abs!==0)out.push({node:c,orig:c.nodeValue,toks:[{idx:c.nodeValue.indexOf(t),text:t,info:info}]});
+  });
+ });
+ return out.slice(0,MAXT);
+}
+function render(target,e){
+ var s="",pos=0,o=target.orig;
+ target.toks.forEach(function(tk){
+  s+=o.slice(pos,tk.idx)+tk.text.replace(tk.info.numStr,fmtNum(tk.info.abs*e,tk.info.dec));
+  pos=tk.idx+tk.text.length;
+ });
+ s+=o.slice(pos);
+ target.node.nodeValue=s;
+}
+function slideCards(){
+ var i=0;
+ visibleRoots().forEach(function(root){
+  root.querySelectorAll(".card").forEach(function(c){
+   if(c.offsetParent===null||i>=14)return;
+   c.classList.remove("cz-in");
+   c.style.animationDelay=(i*70)+"ms";
+   void c.offsetWidth;
+   c.classList.add("cz-in");
+   i++;
+  });
+ });
+ setTimeout(function(){document.querySelectorAll(".cz-in").forEach(function(c){c.classList.remove("cz-in");c.style.animationDelay=""})},1400+i*70);
+}
+function pop(targets){
+ var seen=new Set();
+ targets.forEach(function(t){
+  var p=t.node.parentElement;
+  if(!p||seen.has(p))return;
+  seen.add(p);
+  p.classList.remove("cz-pop");
+  void p.offsetWidth;
+  p.classList.add("cz-pop");
+  setTimeout(function(){p.classList.remove("cz-pop")},500);
+ });
+}
+function animateAll(){
+ if(reduced())return;
+ slideCards();
+ var targets=collect();
+ if(!targets.length)return;
+ var my=++token, start=null;
+ function step(ts){
+  if(my!==token)return;
+  if(start===null)start=ts;
+  var p=Math.min((ts-start)/D,1), e=1-Math.pow(1-p,3);
+  targets.forEach(function(t){render(t,e)});
+  if(p<1)requestAnimationFrame(step);
+  else{targets.forEach(function(t){t.node.nodeValue=t.orig});pop(targets)}
+ }
+ requestAnimationFrame(step);
+}
+var orig=pageSw;
+pageSw=function(){
+ var r=orig.apply(this,arguments);
+ requestAnimationFrame(function(){requestAnimationFrame(animateAll)});
+ return r;
+};
+function checkInitial(){
+ if(initialDone)return;
+ var has=collect().some(function(t){return t.toks.some(function(k){return k.info.abs!==0})});
+ if(!has)return;
+ initialDone=true;
+ obs.disconnect();
+ animateAll();
+}
+var obs=new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(checkInitial,200)});
+function watch(){
+ ROOTS.forEach(function(id){var el=document.getElementById(id);if(el)obs.observe(el,{childList:true,characterData:true,subtree:true})});
+ setTimeout(checkInitial,300);
+}
+if(document.readyState==="complete")watch(); else window.addEventListener("load",watch);
+window.cuzdanimAnimate=animateAll;
 })();
 </script>
 </body></html>
