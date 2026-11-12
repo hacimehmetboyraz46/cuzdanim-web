@@ -1703,6 +1703,10 @@ const futOf=a=>{const t0=todayS();return Math.max(0,S.tx.filter(t=>t.acc===a.id&
 const dSig=a=>a.type==="Borçlu"?0:(a.limit!==undefined&&a.kul!==undefined?a.limit-kulOf(a)-futOf(a):-bal(a.id)-futOf(a));
 const debtBox=a=>{const v=dSig(a);if(v<-0.005)return `<div class="debt"><span style="color:var(--ac)">Artı Bakiye</span><b style="color:var(--ac)">+${fmt(-v)}</b></div>`;return `<div class="debt${v>0.005?" on":""}"><span>Güncel Borç</span><b>${fmt(Math.max(0,v))}</b></div>`};
 const debtOf=a=>a.type==="Borçlu"?0:a.limit!==undefined&&a.kul!==undefined?Math.max(0,a.limit-kulOf(a)-futOf(a)):(bal(a.id)<0?Math.max(0,-bal(a.id)-futOf(a)):0);
+const ccPanel=a=>{const L=a.limit,U=Math.min(kulOf(a),L),used=Math.max(0,L-U),pct=L>0?Math.min(100,Math.max(0,used/L*100)):0,fu=futOf(a);
+ const last=S.tx.filter(t=>t.acc===a.id).sort((x,y)=>String(y.date).localeCompare(String(x.date))).slice(0,4);
+ const cls=pct>=80?"hi":pct>=50?"mid":"";
+ return `<div class="ccp"><div class="ccb"><div class="ccf ${cls}" style="width:${pct.toFixed(1)}%"></div></div><div class="ccr"><span>Kullanılan <b>${fmt(used)}</b></span><span>Kullanılabilir <b>${fmt(U)}</b></span></div>${fu>0.005?`<div class="ccr ccf2"><span>Bekleyen taksit</span><b>${fmt(fu)}</b></div>`:""}<div class="cch">Son hareketler</div>${last.length?last.map(t=>`<div class="ccl"><span>${esc(t.desc||t.cat||"")}<small>${esc(t.date||"")}</small></span><b style="color:${t.kind==="gelir"?"var(--ac)":"var(--rd)"}">${t.kind==="gelir"?"+":"-"}${fmt(t.amt)}</b></div>`).join(""):'<div class="ccl"><span>Hareket yok</span></div>'}</div>`};
 const limHtml=a=>a.limit===undefined?"":`<div class="ln"><span>Tanımlı Limit</span><b>${fmt(a.limit)}</b></div>`+(a.kul!==undefined?`<div class="ln"><span>Kullanılabilir Limit</span><b>${fmt(Math.min(kulOf(a),a.limit))}</b></div>`:"")+(futOf(a)>0.005?`<div class="ln"><span>Bekleyen Taksit (ekstreye girmemiş)</span><b>${fmt(futOf(a))}</b></div>`:"");
 const bal=id=>((S.accs.find(x=>x.id===id)||{}).open||0)+balTx(id);
 const icon=t=>t==="Borçlu"?'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>':t==="Kredi Kartı"?'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>':'<svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg>';
@@ -1756,11 +1760,12 @@ function render(){
  const g=inM.filter(t=>t.kind==="gelir"&&(filt||isMaas(t.acc))).reduce((a,t)=>a+t.amt,0),d=inM.filter(t=>t.kind==="gider").reduce((a,t)=>a+t.amt,0);
  const tot=filt?(isB(filt)?alacakOf(filt):bal(filt)):S.accs.filter(a=>a.type!=="Borçlu").reduce((a,x)=>a+bal(x.id),0);
  $("sg").textContent=fmt(g);$("sd").textContent=fmt(d);$("sn").textContent=fmt(g-d);$("sn").className="sv"+(g-d<0?" r":"");{const B=filt&&isB(filt);$("sgl").textContent=B?"Bu Ay Tahsilat":(filt&&!isMaas(filt)?"Bu Ay Borç Ödemesi":"Bu Ay Gelir");$("sdl").textContent=B?"Bu Ay Verilen Borç":"Bu Ay Gider";$("snl").textContent=B?"Bu Ay Net Alacak":"Bu Ay Net";if(B){$("sn").textContent=fmt(d-g);$("sn").className="sv"}}
- $("sbl").textContent=filt?(isB(filt)?"Toplam Alacak":"Hesap Bakiyesi"):"Toplam Bakiye";$("sb").textContent=fmt(tot);{const A=S.accs.find(a=>a.id===filt);let lbl,val,col;
+ const KK=!!filt&&isK(filt),KA=KK?S.accs.find(a=>a.id===filt):null;
+ $("sbl").textContent=KK?"Güncel Borç":(filt?(isB(filt)?"Toplam Alacak":"Hesap Bakiyesi"):"Toplam Bakiye");$("sb").textContent=KK?fmt(Math.max(0,dSig(KA))):fmt(tot);{const A=S.accs.find(a=>a.id===filt);let lbl,val,col;
  if(filt&&A){const v=dSig(A);if(v<-0.005){lbl="Artı Bakiye";val="+"+fmt(-v);col="var(--ac)"}else{lbl="Güncel Borç";val=fmt(Math.max(0,v));col=v>0.005?"var(--rd)":"var(--mu)"}}
  else{const td=S.accs.reduce((x,a)=>x+debtOf(a),0),sp=S.accs.reduce((x,a)=>x+Math.max(0,-dSig(a)),0);if(td<0.005&&sp>0.005){lbl="Toplam Artı Bakiye";val="+"+fmt(sp);col="var(--ac)"}else{lbl="Toplam Borç";val=fmt(td);col=td>0?"var(--rd)":"var(--mu)"}}
- $("sbd").innerHTML=filt&&isB(filt)?"":`<span>${lbl}</span><b style="color:${col}">${val}</b>`}$("sb").className="sv"+(tot<0?" r":"");
- let h=S.accs.filter(a=>!filt||a.id===filt).map(a=>editing===a.id?`<div class="acc">${accForm(a)}</div>`:`<div class="acc${bkOf(a)?" bk":""}"${bkOf(a)?` style="--bk:${bkOf(a)};--bk2:${shade(bkOf(a))};--bkt:${ptxt(bkOf(a))}"`:""}><div class="t">${a.logo?`<div class="ic lg"><img src="${a.logo}" alt=""></div>`:`<div class="ic">${icon(a.type)}</div>`}<div><b>${esc(a.name)}</b><small>${esc(a.type)}</small>${a.open?`<small>Açılış: ${fmt(a.open)}</small>`:""}</div><div class="ab"><button class="ib" data-e="${a.id}" title="Düzenle"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="ib" data-d="${a.id}" title="Sil"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div></div>${a.iban?`<div class="ibn"><div class="ibl"><span><b style="font-family:system-ui,sans-serif">IBAN</b> TR${esc(ibnNum(a))}</span><div class="ibb"><button class="cpb" data-cp="${a.id}" title="IBAN rakamlarını kopyala">⧉ Kopyala</button><button class="cpb" data-qr="${a.id}" title="Karekodu göster">▦ QR</button></div></div></div>`:""}${a.type==="Borçlu"?`<div class="debt" style="border:0;margin-top:14px"><span>Toplam Alacak</span><b style="color:var(--ac);font-size:18px">${fmt(alacakOf(a.id))}</b></div>`:`<div class="bal" style="color:${bal(a.id)<0?"var(--rd)":"var(--ac)"}">${fmt(bal(a.id))}</div>${limHtml(a)}${debtBox(a)}`}</div>`).join("");
+ $("sbd").innerHTML=KK?`<span>Hareket toplamı</span><b style="color:var(--mu)">${fmt(tot)}</b>`:filt&&isB(filt)?"":`<span>${lbl}</span><b style="color:${col}">${val}</b>`}$("sb").className="sv"+((KK?dSig(KA)>0.005:tot<0)?" r":"");
+ let h=S.accs.filter(a=>!filt||a.id===filt).map(a=>editing===a.id?`<div class="acc">${accForm(a)}</div>`:`<div class="acc${bkOf(a)?" bk":""}"${bkOf(a)?` style="--bk:${bkOf(a)};--bk2:${shade(bkOf(a))};--bkt:${ptxt(bkOf(a))}"`:""}><div class="t">${a.logo?`<div class="ic lg"><img src="${a.logo}" alt=""></div>`:`<div class="ic">${icon(a.type)}</div>`}<div><b>${esc(a.name)}</b><small>${esc(a.type)}</small>${a.open?`<small>Açılış: ${fmt(a.open)}</small>`:""}</div><div class="ab"><button class="ib" data-e="${a.id}" title="Düzenle"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="ib" data-d="${a.id}" title="Sil"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div></div>${a.iban?`<div class="ibn"><div class="ibl"><span><b style="font-family:system-ui,sans-serif">IBAN</b> TR${esc(ibnNum(a))}</span><div class="ibb"><button class="cpb" data-cp="${a.id}" title="IBAN rakamlarını kopyala">⧉ Kopyala</button><button class="cpb" data-qr="${a.id}" title="Karekodu göster">▦ QR</button></div></div></div>`:""}${a.type==="Borçlu"?`<div class="debt" style="border:0;margin-top:14px"><span>Toplam Alacak</span><b style="color:var(--ac);font-size:18px">${fmt(alacakOf(a.id))}</b></div>`:`<div class="bal" style="color:${bal(a.id)<0?"var(--rd)":"var(--ac)"}">${fmt(bal(a.id))}</div>${a.limit!==undefined&&a.kul!==undefined&&isK(a.id)?ccPanel(a):limHtml(a)}${debtBox(a)}`}</div>`).join("");
  $("af").innerHTML=adding?accForm(null):"";
  $("accs").innerHTML=h;
  $("fl").style.display="none";
@@ -3292,4 +3297,20 @@ if(document.readyState==="complete")watch(); else window.addEventListener("load"
 window.cuzdanimAnimate=animateAll;
 })();
 </script>
+<style id="cc-panel-css">
+.ccp{margin-top:12px;padding-top:12px;border-top:1px dashed var(--bd)}
+.ccb{height:10px;border-radius:999px;background:var(--in);overflow:hidden;border:1px solid var(--bd)}
+.ccf{height:100%;border-radius:999px;background:linear-gradient(90deg,#2fb37c,#7fd8a6);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.ccf.mid{background:linear-gradient(90deg,#f0b429,#f7d774)}
+.ccf.hi{background:linear-gradient(90deg,#e5484d,#ff8a80)}
+.ccr{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--mu);margin-top:8px;flex-wrap:wrap}
+.ccr b{color:var(--tx)}
+.ccf2 b{color:var(--rd)}
+.cch{font-size:12px;font-weight:800;color:var(--mu);margin:14px 0 4px;text-transform:uppercase;letter-spacing:.04em}
+.ccl{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.ccl:last-child{border-bottom:0}
+.ccl span{display:flex;flex-direction:column;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ccl small{color:var(--mu);font-size:11px}
+.ccl b{white-space:nowrap}
+</style>
 </body></html>
