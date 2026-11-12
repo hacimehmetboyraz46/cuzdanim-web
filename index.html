@@ -2383,9 +2383,9 @@ function klzVeri(key){
 function klzGrafik(v){
   const ok=v.filter(x=>x.pl!==null);
   if(!ok.length)return '<div class="empty">Hesaplamak için ay başı fiyatları eksik</div>';
-  const W=640,H=190,top=28,bot=34,LM=58,mx=Math.max(0,...ok.map(x=>x.pl)),mn=Math.min(0,...ok.map(x=>x.pl)),rg=(mx-mn)||1,ph=H-top-bot,y0=top+mx/rg*ph;
+  const W=640,H=190,top=28,bot=34,LM=20,mx=Math.max(0,...ok.map(x=>x.pl)),mn=Math.min(0,...ok.map(x=>x.pl)),rg=(mx-mn)||1,ph=H-top-bot,y0=top+mx/rg*ph;
   const n=v.length,sp=(W-LM-20)/n,bw=Math.min(64,sp-12);
-  let g=`<line x1="${LM}" x2="${W-20}" y1="${y0}" y2="${y0}" style="stroke:#9aa0ab" stroke-width="1"/>`+[mx,0,mn].filter((t,k,a)=>a.indexOf(t)===k).map(t=>{const yy=t>=0?y0-t/rg*ph:y0+Math.abs(t)/rg*ph;return `<text x="${LM-6}" y="${yy+4}" font-size="12" font-weight="400" text-anchor="end" style="fill:var(--tx);stroke:none">${fmt(t,0)}</text>`}).join("");
+  let g=`<line x1="${LM}" x2="${W-20}" y1="${y0}" y2="${y0}" style="stroke:#9aa0ab" stroke-width="1"/>`+[mx,0,mn].filter((t,k,a)=>a.indexOf(t)===k).map(t=>{const yy=t>=0?y0-t/rg*ph:y0+Math.abs(t)/rg*ph;return `<text x="${LM+4}" y="${yy-4}" font-size="12" font-weight="400" text-anchor="start" style="fill:var(--tx);stroke:none">${fmt(t,0)}</text>`}).join("");
   v.forEach((x,i)=>{
     const cx=LM+sp*i+sp/2;
     g+=`<text x="${cx}" y="${H-10}" text-anchor="middle" font-size="12" font-weight="400" style="fill:var(--tx);stroke:none">${ayKis(x.m)}</text>`;
@@ -2602,11 +2602,11 @@ function bar(){try{const w=g("pgW");if(!w)return;let b=g("remBar");if(!b){b=docu
  if(d.length&&"Notification" in window&&Notification.permission==="granted"&&localStorage.getItem("cuzdanim_notif")!==todayS()){localStorage.setItem("cuzdanim_notif",todayS());new Notification("Cüzdanım · Yaklaşan ödeme",{body:d.map(x=>x.n+" "+fmt(x.a)+" ("+dtxt(x)+")").join(", ")})}
  }catch(e){}}
 function renderR(){const root=g("pgR");if(!root)return;if(rM===null)rM=month;
- const Y=year,mv=AY.map((_,m)=>[sum(Y,m,"gelir"),sum(Y,m,"gider")]),W=640,H=210,pl=58,bw=(W-2*pl)/12,mx=Math.max(1,...mv.flat());
- let c1=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${[0,mx/2,mx].map(t=>{const yy=H-24-t/mx*(H-40);return `<line x1="${pl}" x2="${W-pl}" y1="${yy}" y2="${yy}" stroke="#e3e5ea" stroke-width="1"/><text x="${pl-6}" y="${yy+4}" font-size="12" font-weight="400" text-anchor="end" style="fill:var(--tx);stroke:none">${fmt(t,0)}</text>`}).join("")}`;
+ const Y=year,mv=AY.map((_,m)=>[sum(Y,m,"gelir"),sum(Y,m,"gider")]),W=640,H=210,pl=8,bw=(W-2*pl)/12,mx=Math.max(1,...mv.flat());
+ let c1=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${[0,mx/2,mx].map(t=>{const yy=H-24-t/mx*(H-40);return `<line x1="${pl}" x2="${W-pl}" y1="${yy}" y2="${yy}" stroke="#e3e5ea" stroke-width="1"/><text x="${pl+4}" y="${yy-4}" font-size="12" font-weight="400" text-anchor="start" style="fill:var(--tx);stroke:none">${fmt(t,0)}</text>`}).join("")}`;
  mv.forEach((v,i)=>{const x=pl+i*bw,h1=v[0]/mx*(H-40),h2=v[1]/mx*(H-40);c1+=`<rect x="${x+4}" y="${H-24-h1}" width="${bw/2-5}" height="${h1}" rx="2" fill="#0f8a63"/><rect x="${x+bw/2}" y="${H-24-h2}" width="${bw/2-5}" height="${h2}" rx="2" fill="#d92d20"/><text x="${x+bw/2}" y="${H-8}" font-size="12" font-weight="400" text-anchor="middle" style="fill:var(--tx);stroke:none">${AY[i].slice(0,3)}</text>`});c1+="</svg>";
  let cum=0;const cs=mv.map(v=>(cum+=v[0]-v[1])),lo=Math.min(0,...cs),hi=Math.max(0,...cs),rg=(hi-lo)||1,px=i=>pl+bw*i+bw/2,py=v=>10+(hi-v)/rg*(H-44);
- let c3=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${[...new Set([hi,0,lo])].map(t=>`<text x="${pl-6}" y="${py(t)+4}" font-size="12" font-weight="400" text-anchor="end" style="fill:var(--tx);stroke:none">${fmt(t,0)}</text>`).join("")}<line x1="${pl}" y1="${py(0)}" x2="${W-pl}" y2="${py(0)}" stroke="#9fa2a8" stroke-dasharray="4"/><polyline fill="none" stroke="#3d7bff" stroke-width="3" points="${cs.map((v,i)=>px(i)+","+py(v)).join(" ")}"/>`;
+ let c3=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${[...new Set([hi,0,lo])].map(t=>`<text x="${pl+4}" y="${py(t)-4}" font-size="12" font-weight="400" text-anchor="start" style="fill:var(--tx);stroke:none">${fmt(t,0)}</text>`).join("")}<line x1="${pl}" y1="${py(0)}" x2="${W-pl}" y2="${py(0)}" stroke="#9fa2a8" stroke-dasharray="4"/><polyline fill="none" stroke="#3d7bff" stroke-width="3" points="${cs.map((v,i)=>px(i)+","+py(v)).join(" ")}"/>`;
  cs.forEach((v,i)=>{c3+=`<circle cx="${px(i)}" cy="${py(v)}" r="3.5" fill="#3d7bff"/><text x="${px(i)}" y="${H-8}" font-size="12" font-weight="400" text-anchor="middle" style="fill:var(--tx);stroke:none">${AY[i].slice(0,3)}</text>`});c3+="</svg>";
  const cats=catsOf(Y,rM),ce=Object.entries(cats).sort((a,b)=>b[1]-a[1]),tot=ce.reduce((a,x)=>a+x[1],0);
  const catH=ce.length?ce.map((x,i)=>`<div class="rrow"><div class="rtop"><b>${esc(x[0])}</b><span>${fmt(x[1])} · %${Math.round(x[1]/tot*100)}</span></div><div class="rbar"><i style="width:${x[1]/ce[0][1]*100}%;background:${PAL[i%PAL.length]}"></i></div></div>`).join(""):'<small style="color:var(--mu)">Bu ay gider kaydı yok</small>';
