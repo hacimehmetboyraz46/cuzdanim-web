@@ -1685,7 +1685,7 @@ const PAYDEF=[];
 const fix=()=>{if(!S.fuzul&&!S.noFuzul)S.fuzul=fzSeed();if(S.fuzul&&!S.fuzul.draws)fzDrawInit(S.fuzul);if(S.fuzul&&S.fuzul.dec===undefined)S.fuzul.dec=1;if(!S.debts)S.debts=[];if(!S.pay)S.pay={items:(S.fresh?[]:PAYDEF).map((x,i)=>({id:i+1,name:x[0],day:x[1],color:x[2]})),cells:{},cash:{},nid:100};if(!S.cats)S.cats={gider:[...CATS.gider],gelir:[...CATS.gelir]}};fix();
 function freshState(){return {accs:[{id:1,name:"MAAŞ HESABI",type:"Maaş Hesabı"}],tx:[],nid:2,debts:[],fresh:true,noFuzul:true,undo1:true}}
 let ref=null,lastJson="";
-const save=()=>{if(window.__offl){window.__offlWarn&&window.__offlWarn();return}const j=JSON.stringify(S),pv=lastJson;lastJson=j;undoPush(pv,j);try{localStorage.setItem("cuzdanim",j)}catch(e){}
+const save=()=>{if(window.__offl){window.__offlWarn&&window.__offlWarn();return}const j=JSON.stringify(S),pv=lastJson;window.__sizeCheck&&window.__sizeCheck(j);lastJson=j;undoPush(pv,j);try{localStorage.setItem("cuzdanim",j)}catch(e){}
  if(ref)ref.set({state:j}).catch(e=>setSync("Kaydedilemedi: "+((e&&e.code)||"")+" "+((e&&e.message)||""),1));};
 function setSync(t,bad){const e=document.getElementById("sync");if(e){e.textContent=t;e.style.color=bad?"var(--rd)":"var(--mu)"}}
 async function initSync(){
@@ -3493,6 +3493,24 @@ html.offlM{padding-top:38px}
    var r=await P.Filesystem.writeFile({path:name,data:text,directory:"CACHE",encoding:"utf8"});
    await P.Share.share({title:name,files:[r.uri]});
   }catch(e){window.appMsg("Dosya paylaşılamadı: "+((e&&e.message)||e))}
+ };
+})();
+</script>
+<script id="size-js">
+(function(){
+ // Firestore tek dokümanda en fazla 1 MiB (1.048.576 bayt) tutar. Sınıra yaklaşınca uyar.
+ var LIMIT=1048576, WARN1=0.6*LIMIT, WARN2=0.85*LIMIT, shown=0;
+ var enc=typeof TextEncoder!=="undefined"?new TextEncoder():null;
+ function bytes(j){return enc?enc.encode(j).length:j.length}
+ window.__sizeCheck=function(j){
+  var b=bytes(j);
+  window.__dataBytes=b;
+  var level=b>=WARN2?2:(b>=WARN1?1:0);
+  if(level>shown){
+   shown=level;
+   var pct=Math.round(b/LIMIT*100);
+   if(window.appMsg)window.appMsg(level===2?"Veri boyutu %"+pct+". Bulut kaydı sınıra çok yakın. Lütfen Raporlar'dan yedek al ve eski kayıtları düşün.":"Veri boyutu %"+pct+". Bulut kaydı sınırına yaklaşıyor, yedek almayı unutma.");
+  }
  };
 })();
 </script>
