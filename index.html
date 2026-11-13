@@ -234,7 +234,6 @@ body.wide .kbar{position:static;flex-direction:row;width:auto;margin:0 0 14px}
 <style>html.kilit .w{visibility:hidden}#pk{position:fixed;inset:0;z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(160deg,#c6c8cc,#8c8f95);color:#1b1d22;padding:env(safe-area-inset-top,0px) 16px env(safe-area-inset-bottom,0px)}html.kilit #pk{display:flex}#pk h2{margin:0;font-size:20px}#pk p{margin:0;font-size:14px;color:#4f525a;min-height:18px;text-align:center}#pk .d{display:flex;gap:12px}#pk .d i{width:14px;height:14px;border-radius:50%;border:2px solid #4f525a}#pk .d i.o{background:#0f8a63;border-color:#0f8a63}#pk .g{display:grid;grid-template-columns:repeat(3,72px);gap:12px}#pk .g button{height:72px;border-radius:50%;border:1px solid #9fa2a8;background:#f1f1f3;color:#1b1d22;font-size:26px;font-family:inherit}#pk .g button:active{background:#d3d5d9}#pk .g button:disabled{visibility:hidden}#pkb{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:9998;width:44px;height:44px;border-radius:50%;border:1px solid #9fa2a8;background:#f1f1f3;font-size:20px}html.kilit #pkb{display:none}</style>
 <div id="pk"><h2 id="pkt"></h2><p id="pkm"></p><div class="d" id="pkd"></div><div class="g" id="pkg"></div></div>
 <button id="pkb" type="button" aria-label="Kilitle">🔒</button>
-<script src="seed.js"></script>
 <script>
 /* Tutar ayrıştırıcı: "3.000,50", "3000,50", "3000.50", "1.500", "1,234.56", "₺ 1.200" hepsini doğru okur */
 window.trNum=function(v){
