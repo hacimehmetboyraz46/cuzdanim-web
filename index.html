@@ -254,10 +254,20 @@ body.wide .kbar{position:static;flex-direction:row;width:auto;margin:0 0 14px}
  #addCard:not(.addhid){position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));max-height:78vh;overflow:auto;z-index:60;border-radius:18px 18px 0 0;margin:0!important;animation:upc .25s ease}@keyframes upc{from{transform:translateY(40%);opacity:0}}
  html body .pgs{display:flex!important;flex-wrap:nowrap;grid-template-columns:none;gap:0;padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
  html body .pgs .pgb{flex:1 1 0;min-width:0;padding:6px 2px;min-height:50px}
- #fab{right:14px!important;bottom:calc(72px + env(safe-area-inset-bottom))!important;width:48px;height:48px;font-size:26px}
- #pkb{right:14px!important;bottom:calc(128px + env(safe-area-inset-bottom))!important;width:44px;height:44px}
- #asBtn{left:auto!important;right:12px!important;bottom:calc(180px + env(safe-area-inset-bottom))!important;width:48px;height:48px;font-size:22px}
- #fabS{right:70px;bottom:calc(72px + env(safe-area-inset-bottom))}
+ #fab{right:14px!important;bottom:calc(84px + env(safe-area-inset-bottom))!important;width:48px;height:48px;font-size:26px}
+ #pkb{right:14px!important;bottom:calc(144px + env(safe-area-inset-bottom))!important;width:44px;height:44px}
+ #asBtn{left:auto!important;right:12px!important;bottom:calc(198px + env(safe-area-inset-bottom))!important;width:48px;height:48px;font-size:22px}
+ #fabS{right:70px;bottom:calc(84px + env(safe-area-inset-bottom))}
+}
+</style><style id="ui11">
+.pgs .pgx{display:none}
+@media(max-width:700px){
+ #asBtn{display:none!important}
+ html body .pgs .pgx{display:flex;flex:1 1 0;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 2px;min-height:50px;border:0;background:transparent;box-shadow:none;border-radius:10px;color:var(--tx);font-size:0;line-height:1;cursor:pointer}
+ html body .pgs .pgx::before{content:attr(data-i);font-size:19px;line-height:1}
+ html body .pgs .pgx::after{content:attr(data-s);font-size:10px;font-weight:700;line-height:1.1}
+ html body .pgs .pgb::after,html body .pgs .pgx::after{font-size:9.5px}
+ #pkb.inhd{position:static!important;width:42px!important;height:34px!important;border-radius:8px!important;margin-left:6px;font-size:16px;box-shadow:none;flex:none;padding:0;line-height:1}
 }
 </style></head><body>
 <style>html.kilit .w{visibility:hidden}#pk{position:fixed;inset:0;z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(160deg,#c6c8cc,#8c8f95);color:#1b1d22;padding:env(safe-area-inset-top,0px) 16px env(safe-area-inset-bottom,0px)}html.kilit #pk{display:flex}#pk h2{margin:0;font-size:20px}#pk p{margin:0;font-size:14px;color:#4f525a;min-height:18px;text-align:center}#pk .d{display:flex;gap:12px}#pk .d i{width:14px;height:14px;border-radius:50%;border:2px solid #4f525a}#pk .d i.o{background:#0f8a63;border-color:#0f8a63}#pk .g{display:grid;grid-template-columns:repeat(3,72px);gap:12px}#pk .g button{height:72px;border-radius:50%;border:1px solid #9fa2a8;background:#f1f1f3;color:#1b1d22;font-size:26px;font-family:inherit}#pk .g button:active{background:#d3d5d9}#pk .g button:disabled{visibility:hidden}#pkb{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:9998;width:44px;height:44px;border-radius:50%;border:1px solid #9fa2a8;background:#f1f1f3;font-size:20px}html.kilit #pkb{display:none}</style>
@@ -3587,5 +3597,15 @@ function bars(){document.querySelectorAll('#pgP [style*="width:"]').forEach(el=>
 function all(){if(busy)return;busy=1;try{cmp();donuts();list();bars();fabVis()}finally{busy=0}}
 const _r=window.render;window.render=function(){const r=_r.apply(this,arguments);all();return r};
 document.addEventListener("click",()=>setTimeout(all,60));setTimeout(all,2700);setInterval(()=>{list();bars();fabVis()},1500);
+})();
+</script><script>
+(function(){
+if(!matchMedia("(max-width:700px)").matches)return;
+const pk=document.getElementById("pkb"),ck=document.getElementById("cikisBtn");
+if(pk&&ck){pk.classList.add("inhd");ck.after(pk)}
+const bb=document.querySelector('.pgb[data-pg="b"]');if(bb)bb.dataset.s="Borçlar";
+const pgs=document.querySelector(".pgs");
+if(pgs&&!pgs.querySelector(".pgx")){const x=document.createElement("button");x.type="button";x.className="pgx";x.dataset.i="💬";x.dataset.s="Sohbet";x.setAttribute("aria-label","Sohbet");
+ x.onclick=e=>{e.stopPropagation();const a=document.getElementById("asBtn");if(a)a.click()};pgs.appendChild(x)}
 })();
 </script></body></html>
