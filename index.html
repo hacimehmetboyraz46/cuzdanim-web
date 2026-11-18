@@ -2630,7 +2630,7 @@ function dueList(days){const out=[];if(!S.pay||!S.pay.items)return out;const n=n
  S.pay.items.forEach(it=>{const nums=String(it.day||"").match(/\d+/g);if(!nums)return;const d=Math.min(+nums[nums.length-1],last),c=S.pay.cells[Y+"|"+it.id+"|"+M];if(!c||!(c.a>0)||c.p)return;const diff=Math.round((new Date(Y,M,d)-t0)/864e5);if(diff<=days)out.push({n:it.name,a:c.a,diff})});
  return out.sort((a,b)=>a.diff-b.diff)}
 const dtxt=x=>x.diff<0?"gecikti":x.diff===0?"bugün":x.diff+" gün kaldı";
-function bar(){try{const w=g("pgW");if(!w)return;let b=g("remBar");if(!b){b=document.createElement("div");b.id="remBar";w.insertBefore(b,w.firstChild)}
+function bar(){try{schedNative();const w=g("pgW");if(!w)return;let b=g("remBar");if(!b){b=document.createElement("div");b.id="remBar";w.insertBefore(b,w.firstChild)}
  const rd=S.remDays===undefined?3:+S.remDays,d=dueList(rd),p=d.map(x=>"⏰ "+x.n+" · "+fmt(x.a)+" · "+dtxt(x));
  const n=new Date(),B=S.budget||{},cs=catsOf(n.getFullYear(),n.getMonth());
  Object.keys(B).forEach(k=>{const s=cs[k]||0;if(B[k]>0&&s>=B[k]*.8)p.push((s>=B[k]?"🚨 Bütçe aşıldı: ":"⚠️ Bütçeye yaklaştı: ")+k+" · "+fmt(s)+" / "+fmt(B[k]))});
@@ -2638,6 +2638,55 @@ function bar(){try{const w=g("pgW");if(!w)return;let b=g("remBar");if(!b){b=docu
  b.style.display="block";b.innerHTML=p.join("<br>");
  if(d.length&&"Notification" in window&&Notification.permission==="granted"&&localStorage.getItem("cuzdanim_notif")!==todayS()){localStorage.setItem("cuzdanim_notif",todayS());new Notification("Cüzdanım · Yaklaşan ödeme",{body:d.map(x=>x.n+" "+fmt(x.a)+" ("+dtxt(x)+")").join(", ")})}
  }catch(e){}}
+// ---- Net servet: hesaplar + alacaklar - borçlar (yatırımlar ayrı sayfada, dahil değil)
+function netH(){
+ let varl=0,alac=0,borc=0;
+ try{
+  S.accs.forEach(a=>{
+   if(a.type==="Borçlu")alac+=Math.max(0,alacakOf(a.id));
+   else if(a.limit===undefined)varl+=Math.max(0,bal(a.id));
+   borc+=debtOf(a);
+  });
+ }catch(e){}
+ const net=varl+alac-borc;
+ return `<div class="card"><h2>Net servet</h2><div style="font-size:1.6rem;font-weight:800;color:${net<0?"var(--rd)":"var(--ac)"}">${fmt(net)}</div><div style="font-size:12px;color:var(--mu);margin-bottom:8px">Hesaplar + alacaklar − borçlar. Yatırımlar bu hesaba dahil değil.</div><div class="rrow"><div class="rtop"><b>Hesaplardaki para</b><span>${fmt(varl)}</span></div></div><div class="rrow"><div class="rtop"><b>Alacaklar</b><span>${fmt(alac)}</span></div></div><div class="rrow"><div class="rtop"><b>Borçlar</b><span style="color:var(--rd)">− ${fmt(borc)}</span></div></div></div>`;
+}
+// ---- Abonelikler: Ödemeler kalemlerinden işaretlenenler
+function subH(){
+ const P=S.pay||{items:[],cells:{}},items=P.items||[],M=rM===null?month:rM;
+ const subs=items.filter(it=>it.sub);
+ const amt=(it,m)=>{const c=P.cells[pk(it.id,m)];return c&&c.a>0?c.a:0};
+ const ay=subs.reduce((q,it)=>q+[0,1,2,3,4,5,6,7,8,9,10,11].reduce((s,m)=>s+amt(it,m),0),0);
+ const am=subs.reduce((q,it)=>q+amt(it,M),0);
+ const list=items.length?items.map(it=>`<label class="rrow" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-sub="${it.id}"${it.sub?" checked":""}><span>${esc(it.name)}</span></label>`).join(""):'<small style="color:var(--mu)">Önce Ödemeler sayfasında kalem ekle.</small>';
+ const rows=subs.length?subs.map(it=>`<div class="rrow"><div class="rtop"><b>${esc(it.name)}</b><span>${amt(it,M)?fmt(amt(it,M)):"—"}</span></div></div>`).join(""):'<small style="color:var(--mu)">Henüz abonelik işaretlemedin.</small>';
+ return `<div class="card"><h2>Abonelikler</h2><small style="color:var(--mu)">Ödemeler listesinden abonelik olanları işaretle. Tutarlar Ödemeler tablosundaki aylık tutarlardan gelir.</small><div style="margin:8px 0">${list}</div><h3>Seçili ay: ${AY[M]}</h3>${rows}<div style="text-align:right;font-weight:800;margin-top:8px">Bu ay toplam: ${fmt(am)}<br><span style="font-weight:600;color:var(--mu)">Yıllık toplam: ${fmt(ay)}</span></div></div>`;
+}
+// ---- APK yerel bildirimleri (Capacitor LocalNotifications)
+let nSig="";
+const LNP=()=>{try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications)||null}catch(e){return null}};
+async function schedNative(){
+ try{
+  if(!(window.isApp&&window.isApp()))return;
+  const L=LNP();if(!L)return;
+  const st=await L.checkPermissions();if(st.display!=="granted")return;
+  const rd=S.remDays===undefined?3:+S.remDays,n=new Date(),Y=n.getFullYear(),M=n.getMonth(),last=new Date(Y,M+1,0).getDate(),list=[];
+  (S.pay&&S.pay.items||[]).forEach(it=>{const nums=String(it.day||"").match(/\d+/g);if(!nums)return;const d=Math.min(+nums[nums.length-1],last),c=S.pay.cells[Y+"|"+it.id+"|"+M];if(!c||!(c.a>0)||c.p)return;
+   [rd,0].forEach(off=>{const at=new Date(Y,M,d-off,9,0,0);if(at>n)list.push({at,body:it.name+" · "+fmt(c.a)+(off?" · "+off+" gün sonra":" · bugün")})})});
+  const sig=JSON.stringify(list.map(x=>x.at.getTime()+x.body));
+  if(sig===nSig)return;nSig=sig;
+  const old=await L.getPending();
+  if(old.notifications&&old.notifications.length)await L.cancel({notifications:old.notifications.map(x=>({id:x.id}))});
+  if(list.length)await L.schedule({notifications:list.slice(0,60).map((x,i)=>({id:1000+i,title:"Cüzdanım · Ödeme",body:x.body,schedule:{at:x.at}}))});
+ }catch(e){}
+}
+async function nativeAsk(){
+ const L=LNP();if(!L){window.appMsg("Bildirim eklentisi bu sürümde yok. APK yeniden derlenmeli.");return}
+ try{
+  const r=await L.requestPermissions();nSig="";await schedNative();
+  window.appMsg(r.display==="granted"?"Bildirimler açıldı":"Bildirim izni verilmedi. Telefon ayarlarından açabilirsin.");
+ }catch(e){window.appMsg("Bildirim açılamadı")}
+}
 function renderR(){const root=g("pgR");if(!root)return;if(rM===null)rM=month;
  const Y=year,mv=AY.map((_,m)=>[sum(Y,m,"gelir"),sum(Y,m,"gider")]),W=640,H=210,pl=8,bw=(W-2*pl)/12,mx=Math.max(1,...mv.flat());
  let c1=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${[0,mx/2,mx].map(t=>{const yy=H-24-t/mx*(H-40);return `<line x1="${pl}" x2="${W-pl}" y1="${yy}" y2="${yy}" stroke="#e3e5ea" stroke-width="1"/><text x="${pl+4}" y="${yy-4}" font-size="12" font-weight="400" text-anchor="start" style="fill:var(--tx);stroke:none">${fmt(t,0)}</text>`}).join("")}`;
@@ -2653,12 +2702,12 @@ function renderR(){const root=g("pgR");if(!root)return;if(rM===null)rM=month;
  const budH=gl.map(k=>{const s=cats[k]||0,l=+B[k]||0,r=l?s/l:0,col=r>=1?"#d92d20":r>=.8?"#f59e0b":"#0f8a63";return `<div class="rrow"><div class="rtop"><b>${esc(k)}</b><span>${fmt(s)} / <input class="rinp" style="width:100px" inputmode="decimal" data-bud="${esc(k)}" value="${l||""}" placeholder="Limit"></span></div>${l?`<div class="rbar"><i style="width:${Math.min(100,r*100)}%;background:${col}"></i></div>`:""}</div>`}).join("");
  const dl=dueList(14),remH=dl.length?dl.map(x=>`<div class="rrow"><div class="rtop"><b>${esc(x.n)}</b><span style="color:${x.diff<=0?"#d92d20":"inherit"}">${fmt(x.a)} · ${dtxt(x)}</span></div></div>`).join(""):'<small style="color:var(--mu)">14 gün içinde ödenmemiş tutar girilmiş ödeme yok</small>';
  const msel=`<select id="rMsel" class="rinp">${AY.map((a,i)=>`<option value="${i}"${i===rM?" selected":""}>${a}</option>`).join("")}</select>`;
- root.innerHTML=`<div class="card"><h2>Gelir / Gider · ${Y}</h2>${c1}<div style="font-size:12px;color:var(--mu)"><span style="color:#0f8a63">■</span> Gelir &nbsp; <span style="color:#d92d20">■</span> Gider</div><h3>Birikimli net (gelir − gider)</h3>${c3}</div>
+ root.innerHTML=`${netH()}<div class="card"><h2>Gelir / Gider · ${Y}</h2>${c1}<div style="font-size:12px;color:var(--mu)"><span style="color:#0f8a63">■</span> Gelir &nbsp; <span style="color:#d92d20">■</span> Gider</div><h3>Birikimli net (gelir − gider)</h3>${c3}</div>
  <div class="card"><div class="rtop"><h2 style="margin:0">Kategoriye göre giderler</h2>${msel}</div>${catH}<div style="text-align:right;font-weight:800;margin-top:8px">Toplam: ${fmt(tot)}</div></div>
  <div class="card"><h2>Hesap bazında borç</h2>${debtH}</div>
  <div class="card"><div class="rtop"><h2 style="margin:0">Aylık bütçe limiti</h2><span style="font-size:12px;color:var(--mu)">${AY[rM]} ayı</span></div><small style="color:var(--mu)">Limit yaz, kutudan çıkınca kaydolur. %80'e gelince uyarı verir.</small>${budH}</div>
  <div class="card"><h2>Ödeme hatırlatıcıları</h2>${remH}<h3>Ayarlar</h3><div class="rtop"><span>Ana sayfada kaç gün önceden uyar</span><input class="rinp" style="width:70px" id="remD" inputmode="numeric" value="${S.remDays===undefined?3:S.remDays}"></div><button class="rbtn noprint" data-ra="notif">Tarayıcı bildirimini aç</button><div style="font-size:12px;color:var(--mu)">Son ödeme günü, Ödemeler sayfasındaki gün alanındaki son sayıdır (ör. 1-8 → 8). Bildirim yalnızca uygulama/sekme açıkken görünür.</div></div>
- <div class="card noprint"><h2>Dışa aktar ve yedek</h2><button class="rbtn" data-ra="csv">Excel (CSV) indir</button><button class="rbtn" data-ra="print">PDF / Yazdır</button><button class="rbtn" data-ra="json">Yedek indir (JSON)</button><button class="rbtn" data-ra="restore">Yedekten geri yükle</button><input type="file" id="rFile" accept=".json,application/json" style="display:none"><div style="font-size:12px;color:var(--mu)">Yedek, Cüzdan verilerini kapsar (Yatırımlar sayfası ayrı tutulur). Android uygulamasında indirme çalışmazsa web sürümünden yap.</div></div>`}
+ ${subH()}<div class="card noprint"><h2>Dışa aktar ve yedek</h2><button class="rbtn" data-ra="csv">Excel (CSV) indir</button><button class="rbtn" data-ra="print">PDF / Yazdır</button><button class="rbtn" data-ra="json">Yedek indir (JSON)</button><button class="rbtn" data-ra="restore">Yedekten geri yükle</button><input type="file" id="rFile" accept=".json,application/json" style="display:none"><div style="font-size:12px;color:var(--mu)">Yedek, Cüzdan verilerini kapsar (Yatırımlar sayfası ayrı tutulur). Android uygulamasında indirme çalışmazsa web sürümünden yap.</div></div>`}
 function dl(name,text,type){if(window.isApp&&window.isApp()){window.dlNative(name,text);return}const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
 function csv(){const q=v=>'"'+String(v).replace(/"/g,'""')+'"',rows=[["Tarih","Tür","Hesap","Kategori","Tutar","Açıklama"]];[...S.tx].sort((a,b)=>(a.date||"").localeCompare(b.date||"")).forEach(t=>{const ac=S.accs.find(x=>x.id===t.acc);rows.push([t.date||"",t.kind==="gelir"?"Gelir":"Gider",ac?ac.name:"",t.cat||"",String(t.amt).replace(".",","),t.desc||""])});return "\ufeff"+rows.map(r=>r.map(q).join(";")).join("\r\n")}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-ra]");if(!b)return;const a=b.dataset.ra;
@@ -2666,11 +2715,12 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
  else if(a==="json")dl("cuzdanim-yedek-"+new Date().toISOString().slice(0,10)+".json",JSON.stringify({v:1,state:S}),"application/json");
  else if(a==="print"){if(window.isApp&&window.isApp()){window.appMsg("APK'da yazdırma henüz desteklenmiyor. CSV veya JSON indirmeyi kullan.")}else{document.body.classList.add("printR");window.print();setTimeout(()=>document.body.classList.remove("printR"),800)}}
  else if(a==="restore")g("rFile").click();
- else if(a==="notif"){if(window.isApp&&window.isApp())window.appMsg("Bildirimler APK'da henüz desteklenmiyor.");else if(!("Notification" in window))alert("Bu cihaz/tarayıcı bildirimi desteklemiyor. Uyarılar ana sayfada görünür.");else Notification.requestPermission().then(p=>alert(p==="granted"?"Bildirim açıldı":"Bildirim izni verilmedi"))}});
+ else if(a==="notif"){if(window.isApp&&window.isApp())nativeAsk();else if(!("Notification" in window))alert("Bu cihaz/tarayıcı bildirimi desteklemiyor. Uyarılar ana sayfada görünür.");else Notification.requestPermission().then(p=>alert(p==="granted"?"Bildirim açıldı":"Bildirim izni verilmedi"))}});
 document.addEventListener("change",e=>{const t=e.target;
  if(t.id==="rFile"){const f=t.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result),st=o.state||o;if(!st||!Array.isArray(st.accs)||!Array.isArray(st.tx))throw 0;if(!confirm("Mevcut verilerin yedekteki verilerle DEĞİŞTİRİLECEK. Devam edilsin mi?"))return;S=st;fix();save();render();alert("Yedek yüklendi")}catch(x){alert("Geçersiz yedek dosyası")}};r.readAsText(f);t.value=""}
  else if(t.dataset&&t.dataset.bud!==undefined){S.budget=S.budget||{};const v=trNum(t.value);if(v>0)S.budget[t.dataset.bud]=v;else delete S.budget[t.dataset.bud];save();renderR();bar()}
  else if(t.id==="rMsel"){rM=+t.value;renderR()}
+ else if(t.dataset&&t.dataset.sub!==undefined){const it=(S.pay.items||[]).find(x=>x.id==t.dataset.sub);if(it){if(t.checked)it.sub=true;else delete it.sub;save();renderR()}}
  else if(t.id==="remD"){S.remDays=Math.max(0,parseInt(t.value)||0);save();renderR();bar()}});
 const pgs=document.querySelector(".pgs");if(pgs){const nb=document.createElement("button");nb.className="pgb";nb.dataset.pg="r";nb.textContent="Raporlar";pgs.appendChild(nb)}
 const d=document.createElement("div");d.id="pgR";d.style.display="none";g("pgF").insertAdjacentElement("afterend",d);
