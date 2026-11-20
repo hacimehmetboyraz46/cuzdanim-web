@@ -2042,15 +2042,14 @@ const remOf=d=>{const la=lkAcc(d);if(la)return debtOf(la);let r=d.rem||0;if(d.ac
 const tOf=d=>Math.max(d.total||0,remOf(d));
 function spendForm(dl){if(!bSpend)return"";if(!dl.length)return `<div class="bfm"><div class="bft">Harcama Ekle</div><div class="empty">Önce bir borç (örneğin kredi kartı) eklemelisiniz.</div></div>`;
  return `<div class="bfm"><div class="bft">Harcama Ekle</div><div class="bfg"><select id="bsx">${dl.map(d=>`<option value="${d.id}" ${bSpend===d.id?"selected":""}>${esc(d.name)}</option>`).join("")}</select><input id="bsa" type="text" inputmode="decimal" autocomplete="off" step="0.01" placeholder="Harcama tutarı (₺)"><input id="bsd" type="date" value="${bDate()}"><input id="bsn" placeholder="Açıklama (örn. market)"></div><div class="bfb"><button class="save" data-ba="spendok" data-bi="0">Harcamayı Ekle</button><button class="sm" data-ba="cancel" data-bi="0" style="border-radius:10px;padding:12px 18px">Vazgeç</button></div></div>`}
+let bYM=null;function bYm(i){bYM=i<0?null:i;renderB()}
 function yearChartHtml(Y,totNow,alNow){
- const now=new Date(),nowY=now.getFullYear(),nowM=now.getMonth();
+ const now=new Date(),nowY=now.getFullYear(),nowM=now.getMonth(),nowD=now.getDate();
  const n=Y<nowY?12:(Y===nowY?nowM+1:0);
  if(!n)return `<div class="card" style="margin-top:12px"><div class="empty">${Y} yılı henüz başlamadı</div></div>`;
  const accs=S.accs.filter(a=>a.type!=="Borçlu"),tx={};accs.forEach(a=>{tx[a.id]=S.tx.filter(t=>t.acc===a.id)});
  const bacs=S.accs.filter(a=>a.type==="Borçlu");
  const z=x=>String(x).padStart(2,"0");
- const eom=m=>{const d=new Date(Y,m+1,0);return Y+"-"+z(m+1)+"-"+z(d.getDate())};
- const borc=[],alac=[];
  const dHist=(d,ds)=>{const la=lkAcc(d);if(la&&S.accs.some(x=>x.id===la.id&&x.type!=="Borçlu"))return debtAcc(la,ds,tx);
   if(d.cr&&ds<d.cr)return 0;
   const L=(d.log||[]).filter(l=>!l.pre);
@@ -2058,34 +2057,46 @@ function yearChartHtml(Y,totNow,alNow){
   let r=(d.rem||0)-sh+so;
   L.forEach(l=>{if(l.d<=ds)r+=l.t==="h"?l.a:-l.a});
   return Math.max(0,r)};
- for(let m=0;m<n;m++){const ds=eom(m);borc.push((S.debts||[]).reduce((q,d)=>q+dHist(d,ds),0));
-  alac.push(Math.max(0,bacs.reduce((q,a)=>q+(a.open||0)-S.tx.filter(t=>t.acc===a.id&&t.date<=ds).reduce((x,t)=>x+(t.kind==="gelir"?t.amt:-t.amt),0),0)))}
- if(Y===nowY&&n>0){borc[n-1]=totNow;alac[n-1]=alNow}
- let s0=borc.findIndex((v,i)=>v>0.005||alac[i]>0.005);
+ const bAt=ds=>(S.debts||[]).reduce((q,d)=>q+dHist(d,ds),0);
+ const aAt=ds=>Math.max(0,bacs.reduce((q,a)=>q+(a.open||0)-S.tx.filter(t=>t.acc===a.id&&t.date<=ds).reduce((x,t)=>x+(t.kind==="gelir"?t.amt:-t.amt),0),0));
+ const sel=(typeof bYM==="number"&&bYM>=0&&bYM<n)?bYM:null;
  const W=680,H=260,P={l:44,r:16,t:20,b:28},iw=W-P.l-P.r,ih=H-P.t-P.b;
- const mx=Math.max(1,...borc,...alac)*1.15;
- const X=i=>P.l+(n>1?i*(iw/(n-1)):iw/2),Y2=v=>P.t+ih-(v/mx)*ih;
- const RED="#e34948",BLUE="#2a78d6",GREEN="#1baf7a",GRAY="#888780";
+ const RED="#e34948",BLUE="#2a78d6",GREEN="#1baf7a";
  const col=(a,b)=>b>a+0.005?RED:BLUE;
  const f=v=>v.toFixed(1);
  const txt=(x,y,anchor,size,fill,t)=>`<text style="font-weight:400;stroke:none" x="${f(x)}" y="${f(y)}" text-anchor="${anchor}" font-size="${size}" fill="${fill}">${t}</text>`;
- let g="";
- 
- for(let i=0;i<n;i++)g+=txt(X(i),H-8,"middle",10,"var(--mu)",AY[i].slice(0,3));
- let fill="",seg="",alp="",dots="";
- if(s0>=0){
-  for(let i=s0;i<n-1;i++){const c=col(borc[i],borc[i+1]);
-   fill+=`<polygon points="${f(X(i))},${f(Y2(0))} ${f(X(i))},${f(Y2(borc[i]))} ${f(X(i+1))},${f(Y2(borc[i+1]))} ${f(X(i+1))},${f(Y2(0))}" fill="${c}" fill-opacity="0.18" stroke="none"/>`;
-   seg+=`<line x1="${f(X(i))}" y1="${f(Y2(borc[i]))}" x2="${f(X(i+1))}" y2="${f(Y2(borc[i+1]))}" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`}
-  alp=`<polyline fill="none" stroke="${GREEN}" stroke-width="1.5" stroke-linejoin="round" points="${alac.map((v,i)=>i<s0?"":f(X(i))+","+f(Y2(v))).filter(Boolean).join(" ")}"/>`;
-  for(let i=s0;i<n;i++){const c=i===s0?BLUE:col(borc[i-1],borc[i]);
-   dots+=`<circle cx="${f(X(i))}" cy="${f(Y2(borc[i]))}" r="2.5" style="fill:${c};stroke:none"/>`+txt(X(i),Y2(borc[i])-8,"middle",10,c,Math.round(borc[i]/1000));
-   alp+=`<circle cx="${f(X(i))}" cy="${f(Y2(alac[i]))}" r="2" style="fill:${GREEN};stroke:none"/>`+txt(X(i),Y2(alac[i])+14,"middle",10,GREEN,Math.round(alac[i]/1000))}
+ let B=[],A=[],xl=[],xs=10,title;
+ if(sel===null){
+  for(let m=0;m<n;m++){const ds=Y+"-"+z(m+1)+"-"+z(new Date(Y,m+1,0).getDate());B.push(bAt(ds));A.push(aAt(ds));xl.push(AY[m].slice(0,3))}
+  if(Y===nowY&&n>0){B[n-1]=totNow;A[n-1]=alNow}
+  title=`${Y} yılı borç ve alacak`;
+ }else{
+  const last=(Y===nowY&&sel===nowM)?nowD:new Date(Y,sel+1,0).getDate();
+  for(let k=1;k<=last;k++){const ds=Y+"-"+z(sel+1)+"-"+z(k);B.push(bAt(ds));A.push(aAt(ds));xl.push(String(k))}
+  if(Y===nowY&&sel===nowM&&last>0){B[last-1]=totNow;A[last-1]=alNow}
+  xs=9;title=`${Y} ${AY[sel]} borç ve alacak`;
  }
- if(s0<0)return `<div class="card" style="margin-top:12px"><div class="bt"><h2>${Y} yılı borç ve alacak</h2></div><div class="empty">Bu yıl henüz borç veya alacak kaydı yok</div></div>`;
- const last=n-1,start=borc[s0],dl=borc[last]-start;
- const sumTxt=`İlk veri ayı borç: <b>${fmt(start)}</b> · Son borç: <b>${fmt(borc[last])}</b> · Değişim: <b style="color:${dl>0.005?RED:dl<-0.005?BLUE:"var(--mu)"}">${dl>0?"+":""}${fmt(dl)}</b> · Son alacak: <b style="color:${GREEN}">${fmt(alac[last])}</b>`;
- return `<div class="card" style="margin-top:12px"><div class="bt"><h2>${Y} yılı borç ve alacak</h2></div><div style="font-size:12px;color:var(--mu);margin-bottom:8px">${sumTxt}</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="${Y} yılı aylık borç ve alacak grafiği">${g}${fill}${seg}${alp}${dots}</svg><div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mu);margin-top:6px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${RED};margin-right:4px"></i>Borç arttı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${BLUE};margin-right:4px"></i>Borç azaldı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${GREEN};margin-right:4px"></i>Alacak</span><span>Değerler bin ₺</span></div></div>`;
+ const btn=(i,label,on,dis)=>`<button class="sm" ${dis?"disabled":""} onclick="bYm(${i})" style="${on?"font-weight:500;":""}${dis?"opacity:.4;":""}">${label}</button>`;
+ const monthBtns=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px">${AY.slice(0,12).map((mn,i)=>btn(i,mn.slice(0,3),sel===i,i>=n)).join("")}${btn(-1,"Tümü",sel===null,false)}</div>`;
+ const head=`<div class="bt"><h2>${title}</h2></div>`;
+ const N=B.length;
+ const s0=B.findIndex((v,i)=>v>0.005||A[i]>0.005);
+ if(s0<0)return `<div class="card" style="margin-top:12px">${head}${monthBtns}<div class="empty">Bu dönemde borç veya alacak kaydı yok</div></div>`;
+ const mx=Math.max(1,...B,...A)*1.15;
+ const X=i=>P.l+(N>1?i*(iw/(N-1)):iw/2),Y2=v=>P.t+ih-(v/mx)*ih;
+ let xls="",fill="",seg="",alp="",dots="";
+ for(let i=0;i<N;i++)xls+=txt(X(i),H-8,"middle",xs,"var(--mu)",xl[i]);
+ for(let i=s0;i<N-1;i++){const c=col(B[i],B[i+1]);
+  fill+=`<polygon points="${f(X(i))},${f(Y2(0))} ${f(X(i))},${f(Y2(B[i]))} ${f(X(i+1))},${f(Y2(B[i+1]))} ${f(X(i+1))},${f(Y2(0))}" fill="${c}" fill-opacity="0.18" stroke="none"/>`;
+  seg+=`<line x1="${f(X(i))}" y1="${f(Y2(B[i]))}" x2="${f(X(i+1))}" y2="${f(Y2(B[i+1]))}" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`}
+ alp=`<polyline fill="none" stroke="${GREEN}" stroke-width="1.5" stroke-linejoin="round" points="${A.map((v,i)=>i<s0?"":f(X(i))+","+f(Y2(v))).filter(Boolean).join(" ")}"/>`;
+ for(let i=s0;i<N;i++){const c=i===s0?BLUE:col(B[i-1],B[i]);
+  dots+=`<circle cx="${f(X(i))}" cy="${f(Y2(B[i]))}" r="2.5" style="fill:${c};stroke:none"/>`+txt(X(i),Y2(B[i])-8,"middle",xs,c,Math.round(B[i]/1000));
+  alp+=`<circle cx="${f(X(i))}" cy="${f(Y2(A[i]))}" r="2" style="fill:${GREEN};stroke:none"/>`+txt(X(i),Y2(A[i])+14,"middle",xs,GREEN,Math.round(A[i]/1000))}
+ const start=B[s0],lastV=B[N-1],dl=lastV-start;
+ const startLbl=sel===null?"İlk veri ayı borç":"Dönem başı borç";
+ const sumTxt=`${startLbl}: <b>${fmt(start)}</b> · Son borç: <b>${fmt(lastV)}</b> · Değişim: <b style="color:${dl>0.005?RED:dl<-0.005?BLUE:"var(--mu)"}">${dl>0?"+":""}${fmt(dl)}</b> · Son alacak: <b style="color:${GREEN}">${fmt(A[N-1])}</b>`;
+ return `<div class="card" style="margin-top:12px">${head}${monthBtns}<div style="font-size:12px;color:var(--mu);margin-bottom:8px">${sumTxt}</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="${title} grafiği">${xls}${fill}${seg}${alp}${dots}</svg><div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mu);margin-top:6px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${RED};margin-right:4px"></i>Borç arttı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${BLUE};margin-right:4px"></i>Borç azaldı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${GREEN};margin-right:4px"></i>Alacak</span><span>Değerler bin ₺</span></div></div>`;
 }
 function renderB(){const root=$("pgB");if(!root)return;
  const T=new Date(),Y=T.getFullYear(),MO=T.getMonth(),TD=T.getDate();
