@@ -2076,7 +2076,7 @@ function yearChartHtml(Y,totNow,alNow){
   if(Y===nowY&&sel===nowM&&last>0){B[last-1]=totNow;A[last-1]=alNow}
   xs=9;title=`${Y} ${AY[sel]} borç ve alacak`;
  }
- const btn=(i,label,on,dis)=>`<button class="sm" ${dis?"disabled":""} onclick="bYm(${i})" style="${on?"font-weight:500;":""}${dis?"opacity:.4;":""}">${label}</button>`;
+ const btn=(i,label,on,dis)=>`<button class="sm" ${dis?"disabled":""} onclick="bYm(${i})" style="${on?"background:var(--ac);color:#fff;border-color:var(--ac);font-weight:500;":""}${dis?"opacity:.4;":""}">${label}</button>`;
  const monthBtns=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px">${AY.slice(0,12).map((mn,i)=>btn(i,mn.slice(0,3),sel===i,i>=n)).join("")}${btn(-1,"Tümü",sel===null,false)}</div>`;
  const head=`<div class="bt"><h2>${title}</h2></div>`;
  const N=B.length;
