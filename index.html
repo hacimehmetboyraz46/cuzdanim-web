@@ -2042,7 +2042,7 @@ const remOf=d=>{const la=lkAcc(d);if(la)return debtOf(la);let r=d.rem||0;if(d.ac
 const tOf=d=>Math.max(d.total||0,remOf(d));
 function spendForm(dl){if(!bSpend)return"";if(!dl.length)return `<div class="bfm"><div class="bft">Harcama Ekle</div><div class="empty">Önce bir borç (örneğin kredi kartı) eklemelisiniz.</div></div>`;
  return `<div class="bfm"><div class="bft">Harcama Ekle</div><div class="bfg"><select id="bsx">${dl.map(d=>`<option value="${d.id}" ${bSpend===d.id?"selected":""}>${esc(d.name)}</option>`).join("")}</select><input id="bsa" type="text" inputmode="decimal" autocomplete="off" step="0.01" placeholder="Harcama tutarı (₺)"><input id="bsd" type="date" value="${bDate()}"><input id="bsn" placeholder="Açıklama (örn. market)"></div><div class="bfb"><button class="save" data-ba="spendok" data-bi="0">Harcamayı Ekle</button><button class="sm" data-ba="cancel" data-bi="0" style="border-radius:10px;padding:12px 18px">Vazgeç</button></div></div>`}
-let bYM=null;function bYm(i){bYM=i<0?null:i;renderB()}
+let bYM=null,bYD=null;function bYm(i){bYM=i<0?null:i;bYD=null;renderB()}function bYd(k){bYD=bYD===k?null:k;renderB()}
 function yearChartHtml(Y,totNow,alNow){
  const now=new Date(),nowY=now.getFullYear(),nowM=now.getMonth(),nowD=now.getDate();
  const n=Y<nowY?12:(Y===nowY?nowM+1:0);
@@ -2093,10 +2093,29 @@ function yearChartHtml(Y,totNow,alNow){
  for(let i=s0;i<N;i++){const c=i===s0?BLUE:col(B[i-1],B[i]);
   dots+=`<circle cx="${f(X(i))}" cy="${f(Y2(B[i]))}" r="2.5" style="fill:${c};stroke:none"/>`+txt(X(i),Y2(B[i])-8,"middle",xs,c,Math.round(B[i]/1000));
   alp+=`<circle cx="${f(X(i))}" cy="${f(Y2(A[i]))}" r="2" style="fill:${GREEN};stroke:none"/>`+txt(X(i),Y2(A[i])+14,"middle",xs,GREEN,Math.round(A[i]/1000))}
+ let hit="",dayCard="";
+ if(sel!==null){
+  for(let i=0;i<N;i++)hit+=`<circle cx="${f(X(i))}" cy="${f(Y2(B[i]))}" r="11" style="fill:transparent;stroke:none;cursor:pointer" onclick="bYd(${i+1})"/>`;
+  if(bYD!=null&&bYD>=1&&bYD<=N){
+   const k=bYD,ds=Y+"-"+z(sel+1)+"-"+z(k);
+   const prevB=k>1?B[k-2]:(()=>{const pd=new Date(Y,sel,0);return bAt(pd.getFullYear()+"-"+z(pd.getMonth()+1)+"-"+z(pd.getDate()))})();
+   const ch=B[k-1]-prevB;
+   const ev=[];
+   (S.debts||[]).forEach(d=>{const la=lkAcc(d);
+    if(la&&S.accs.some(x=>x.id===la.id&&x.type!=="Borçlu")){
+     S.tx.filter(t=>t.acc===la.id&&t.date===ds).forEach(t=>ev.push({s:t.kind==="gider"?"+":"-",a:t.amt,w:(t.kind==="gider"?"Harcama":"Ödeme")+" • "+esc(accName(la.id))+(t.desc?" • "+esc(t.desc):""),c:t.kind==="gider"?RED:BLUE}));
+    }else{(d.log||[]).forEach(l=>{if(!l.pre&&l.d===ds)ev.push({s:l.t==="h"?"+":"-",a:l.a,w:(l.t==="h"?"Harcama":"Ödeme")+" • "+esc(d.name)+(l.n?" • "+esc(l.n):""),c:l.t==="h"?RED:BLUE})})}
+   });
+   bacs.forEach(a=>S.tx.filter(t=>t.acc===a.id&&t.date===ds).forEach(t=>ev.push({s:t.kind==="gider"?"+":"-",a:t.amt,w:(t.kind==="gider"?"Borç verildi":"Tahsilat")+" • "+esc(a.name)+(t.desc?" • "+esc(t.desc):""),c:GREEN})));
+   const chTxt=ch>0.005?`<span style="color:${RED}">▲ +${fmt(ch)} arttı</span>`:ch<-0.005?`<span style="color:${BLUE}">▼ ${fmt(ch)} azaldı</span>`:`<span style="color:var(--mu)">Değişmedi</span>`;
+   const rows=ev.length?ev.map(e=>`<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--bd)"><span>${e.w}</span><b style="color:${e.c};white-space:nowrap">${e.s}${fmt(e.a)}</b></div>`).join(""):`<div style="font-size:13px;color:var(--mu);padding:6px 0">Bu gün kayıtlı hareket yok</div>`;
+   dayCard=`<div style="margin-top:12px;padding:12px;border:1px solid var(--bd);border-radius:12px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px"><b style="font-size:14px">${k} ${AY[sel]} ${Y}</b><span style="font-size:12px">${chTxt}</span></div><div style="font-size:12px;color:var(--mu);margin-bottom:6px">Gün sonu borç: <b>${fmt(B[k-1])}</b></div>${rows}</div>`;
+  }
+ }
  const start=B[s0],lastV=B[N-1],dl=lastV-start;
  const startLbl=sel===null?"İlk veri ayı borç":"Dönem başı borç";
  const sumTxt=`${startLbl}: <b>${fmt(start)}</b> · Son borç: <b>${fmt(lastV)}</b> · Değişim: <b style="color:${dl>0.005?RED:dl<-0.005?BLUE:"var(--mu)"}">${dl>0?"+":""}${fmt(dl)}</b> · Son alacak: <b style="color:${GREEN}">${fmt(A[N-1])}</b>`;
- return `<div class="card" style="margin-top:12px">${head}${monthBtns}<div style="font-size:12px;color:var(--mu);margin-bottom:8px">${sumTxt}</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="${title} grafiği">${xls}${fill}${seg}${alp}${dots}</svg><div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mu);margin-top:6px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${RED};margin-right:4px"></i>Borç arttı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${BLUE};margin-right:4px"></i>Borç azaldı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${GREEN};margin-right:4px"></i>Alacak</span><span>Değerler bin ₺</span></div></div>`;
+ return `<div class="card" style="margin-top:12px">${head}${monthBtns}<div style="font-size:12px;color:var(--mu);margin-bottom:8px">${sumTxt}</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="${title} grafiği">${xls}${fill}${seg}${alp}${dots}${hit}</svg><div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mu);margin-top:6px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${RED};margin-right:4px"></i>Borç arttı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${BLUE};margin-right:4px"></i>Borç azaldı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${GREEN};margin-right:4px"></i>Alacak</span><span>Değerler bin ₺</span></div>${dayCard}</div>`;
 }
 function renderB(){const root=$("pgB");if(!root)return;
  const T=new Date(),Y=T.getFullYear(),MO=T.getMonth(),TD=T.getDate();
