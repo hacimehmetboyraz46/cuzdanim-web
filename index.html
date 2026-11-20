@@ -2066,11 +2066,11 @@ function yearChartHtml(Y,totNow,alNow){
  const mx=Math.max(1,...borc,...alac)*1.15;
  const X=i=>P.l+(n>1?i*(iw/(n-1)):iw/2),Y2=v=>P.t+ih-(v/mx)*ih;
  const RED="#e34948",BLUE="#2a78d6",GREEN="#1baf7a",GRAY="#888780";
- const col=(a,b)=>b>a+0.005?RED:(b<a-0.005?BLUE:GRAY);
+ const col=(a,b)=>b>a+0.005?RED:BLUE;
  const f=v=>v.toFixed(1);
  const txt=(x,y,anchor,size,fill,t)=>`<text style="font-weight:400;stroke:none" x="${f(x)}" y="${f(y)}" text-anchor="${anchor}" font-size="${size}" fill="${fill}">${t}</text>`;
  let g="";
- for(let v=0;v<=mx;v+=mx/4){const yy=Y2(v);g+=`<line x1="${P.l}" x2="${W-P.r}" y1="${f(yy)}" y2="${f(yy)}" stroke="var(--bd)" stroke-width="0.5"/>`+txt(P.l-6,yy+4,"end",10,"var(--mu)",Math.round(v/1000))}
+ 
  for(let i=0;i<n;i++)g+=txt(X(i),H-8,"middle",10,"var(--mu)",AY[i].slice(0,3));
  let fill="",seg="",alp="",dots="";
  if(s0>=0){
@@ -2078,9 +2078,9 @@ function yearChartHtml(Y,totNow,alNow){
    fill+=`<polygon points="${f(X(i))},${f(Y2(0))} ${f(X(i))},${f(Y2(borc[i]))} ${f(X(i+1))},${f(Y2(borc[i+1]))} ${f(X(i+1))},${f(Y2(0))}" fill="${c}" fill-opacity="0.18" stroke="none"/>`;
    seg+=`<line x1="${f(X(i))}" y1="${f(Y2(borc[i]))}" x2="${f(X(i+1))}" y2="${f(Y2(borc[i+1]))}" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`}
   alp=`<polyline fill="none" stroke="${GREEN}" stroke-width="1.5" stroke-linejoin="round" points="${alac.map((v,i)=>i<s0?"":f(X(i))+","+f(Y2(v))).filter(Boolean).join(" ")}"/>`;
-  for(let i=s0;i<n;i++){const c=i===s0?GRAY:col(borc[i-1],borc[i]);
-   dots+=`<circle cx="${f(X(i))}" cy="${f(Y2(borc[i]))}" r="2.5" fill="${c}"/>`+txt(X(i),Y2(borc[i])-8,"middle",10,c,Math.round(borc[i]/1000));
-   alp+=`<circle cx="${f(X(i))}" cy="${f(Y2(alac[i]))}" r="2" fill="${GREEN}"/>`+txt(X(i),Y2(alac[i])+14,"middle",10,GREEN,Math.round(alac[i]/1000))}
+  for(let i=s0;i<n;i++){const c=i===s0?BLUE:col(borc[i-1],borc[i]);
+   dots+=`<circle cx="${f(X(i))}" cy="${f(Y2(borc[i]))}" r="2.5" style="fill:${c};stroke:none"/>`+txt(X(i),Y2(borc[i])-8,"middle",10,c,Math.round(borc[i]/1000));
+   alp+=`<circle cx="${f(X(i))}" cy="${f(Y2(alac[i]))}" r="2" style="fill:${GREEN};stroke:none"/>`+txt(X(i),Y2(alac[i])+14,"middle",10,GREEN,Math.round(alac[i]/1000))}
  }
  if(s0<0)return `<div class="card" style="margin-top:12px"><div class="bt"><h2>${Y} yılı borç ve alacak</h2></div><div class="empty">Bu yıl henüz borç veya alacak kaydı yok</div></div>`;
  const last=n-1,start=borc[s0],dl=borc[last]-start;
