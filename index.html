@@ -1773,13 +1773,13 @@ const ccPanel=a=>{const hasL=a.limit!==undefined&&a.kul!==undefined,L=a.limit||0
  const last=S.tx.filter(t=>t.acc===a.id).sort((x,y)=>String(y.date).localeCompare(String(x.date))).slice(0,4);
  const cls=pct>=80?"hi":pct>=50?"mid":"";
  const tile=(lb,v,c)=>`<div class="cct"><small>${lb}</small><b${c?` style="color:${c}"`:""}>${v===null?"-":fmt(v)}</b></div>`;
- const open=window.tpOpen===a.id;
+ const open=window.tpOpen===a.id;const lastOpen=window.tplOpen===a.id;
  const form=open?`<div class="tpf"><input id="tpd${a.id}" placeholder="Açıklama (örn. Lastik)"><input id="tpa${a.id}" inputmode="decimal" placeholder="Toplam tutar (örn. 3.000,00)"><input id="tpn${a.id}" type="number" min="2" placeholder="Taksit sayısı"><label>İlk taksit tarihi<input id="tpdt${a.id}" type="date" value="${todayS()}"></label><button class="tpb" data-tpadd="${a.id}">Kaydet</button></div>`:"";
  const plist=pl.length?pl.map(p=>`<div class="ccl"><span>${esc(p.desc)}<small>${p.paid}/${p.n} ödendi · aylık ${fmt(p.monthly)} · sonraki ${p.nextDate?p.nextDate.split("-").reverse().join("."):"-"}</small></span><b style="color:var(--rd)">${fmt(p.remaining)}</b></div>`).join(""):'<div class="ccl"><span>Aktif taksit planı yok</span></div>';
  return `<div class="ccp"><div class="ccb"><div class="ccf ${cls}" style="width:${pct.toFixed(1)}%"></div></div>`+
  `<div class="ccg">${tile("Toplam limit",hasL?L:null)}${tile("Toplam borç <i>(harcama + taksit)</i>",toplam,"var(--rd)")}${tile("Kullanılabilir limit",U,"var(--ac)")}${tile("Kalan taksit tutarı",kalanTk,kalanTk>0.005?"var(--rd)":"")}${tile("Bu ay harcanan",buAy)}</div>`+
  `<div class="cch">Taksit planları <button class="tpb" data-tpt="${a.id}">${open?"Kapat":"+ Taksit planı ekle"}</button></div>${form}${plist}`+
- `<div class="cch">Son hareketler</div>${last.length?last.map(t=>`<div class="ccl"><span>${esc(t.desc||t.cat||"")}<small>${esc(t.date||"")}</small></span><b style="color:${t.kind==="gelir"?"var(--ac)":"var(--rd)"}">${t.kind==="gelir"?"+":"-"}${fmt(t.amt)}</b></div>`).join(""):'<div class="ccl"><span>Hareket yok</span></div>'}</div>`};
+ `<div class="cch" style="display:flex;justify-content:space-between;align-items:center">Son hareketler <button class="tpb" data-tpl="${a.id}" style="margin-left:8px;font-size:16px;line-height:1;padding:2px 12px">${lastOpen?"−":"+"}</button></div>${!lastOpen?"":last.length?last.map(t=>`<div class="ccl"><span>${esc(t.desc||t.cat||"")}<small>${esc(t.date||"")}</small></span><b style="color:${t.kind==="gelir"?"var(--ac)":"var(--rd)"}">${t.kind==="gelir"?"+":"-"}${fmt(t.amt)}</b></div>`).join(""):'<div class="ccl"><span>Hareket yok</span></div>'}</div>`};
 const limHtml=a=>a.limit===undefined?"":`<div class="ln"><span>Tanımlı Limit</span><b>${fmt(a.limit)}</b></div>`+(a.kul!==undefined?`<div class="ln"><span>Kullanılabilir Limit</span><b>${fmt(Math.min(kulOf(a),a.limit))}</b></div>`:"")+(futOf(a)>0.005?`<div class="ln"><span>Bekleyen Taksit (ekstreye girmemiş)</span><b>${fmt(futOf(a))}</b></div>`:"");
 const bal=id=>((S.accs.find(x=>x.id===id)||{}).open||0)+balTx(id);
 const icon=t=>t==="Borçlu"?'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>':t==="Kredi Kartı"?'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>':'<svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/></svg>';
@@ -3443,6 +3443,8 @@ window.cuzdanimAnimate=animateAll;
 (function(){
 window.tpOpen=null;
 document.addEventListener("click",function(e){
+ var tl=e.target.closest("[data-tpl]");
+ if(tl){var idl=+tl.dataset.tpl;window.tplOpen=window.tplOpen===idl?null:idl;render();return}
  var t=e.target.closest("[data-tpt]");
  if(t){var id=+t.dataset.tpt;window.tpOpen=window.tpOpen===id?null:id;render();return}
  var b=e.target.closest("[data-tpadd]");
