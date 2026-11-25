@@ -1754,7 +1754,7 @@ const alacakOf=id=>((S.accs.find(x=>x.id===id)||{}).open||0)-balTx(id);
 const todayS=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const futOf=a=>{const t0=todayS();return Math.max(0,S.tx.filter(t=>t.acc===a.id&&t.date>t0).reduce((q,t)=>q+(t.kind==="gider"?t.amt:-t.amt),0))};
 const dSig=a=>a.type==="Borçlu"?0:(a.limit!==undefined&&a.kul!==undefined?a.limit-kulOf(a)-futOf(a):-bal(a.id)-futOf(a));
-const debtBox=a=>{const v=dSig(a);if(v<-0.005)return `<div class="debt"><span style="color:var(--ac)">Artı Bakiye</span><b style="color:var(--ac)">+${fmt(-v)}</b></div>`;return `<div class="debt${v>0.005?" on":""}"><span>Güncel Borç</span><b>${fmt(Math.max(0,v))}</b></div>`};
+const debtBox=a=>{const v=-dSig(a);const c=v>0.005?"#0f8a63":(v<-0.005?"#d92d20":"var(--mu)");return `<div class="debt${v<-0.005?" on":""}"><span>Güncel Bakiye</span><b style="color:${c}">${fmt(v)}</b></div>`};
 const debtOf=a=>a.type==="Borçlu"?0:a.limit!==undefined&&a.kul!==undefined?Math.max(0,a.limit-kulOf(a)-futOf(a)):(bal(a.id)<0?Math.max(0,-bal(a.id)-futOf(a)):0);
 const plansOf=a=>{const today=todayS(),groups={},lanes={};
  const rowsOf=S.tx.filter(t=>t.acc===a.id&&(t.tk||/\(\d+\/\d+\. taksit\)/.test(String(t.desc||""))));
@@ -1830,8 +1830,8 @@ function render(){
  const tot=filt?(isB(filt)?alacakOf(filt):bal(filt)):S.accs.filter(a=>a.type!=="Borçlu").reduce((a,x)=>a+bal(x.id),0);
  $("sg").textContent=fmt(g);$("sd").textContent=fmt(d);$("sn").textContent=fmt(g-d);$("sn").className="sv"+(g-d<0?" r":"");{const B=filt&&isB(filt);$("sgl").textContent=B?"Bu Ay Tahsilat":(filt&&!isMaas(filt)?"Bu Ay Borç Ödemesi":"Bu Ay Gelir");$("sdl").textContent=B?"Bu Ay Verilen Borç":"Bu Ay Gider";$("snl").textContent=B?"Bu Ay Net Alacak":"Bu Ay Net";if(B){$("sn").textContent=fmt(d-g);$("sn").className="sv"}}
  const KK=!!filt&&isK(filt),KA=KK?S.accs.find(a=>a.id===filt):null;
- $("sbl").textContent=KK?"Güncel Borç":(filt?(isB(filt)?"Toplam Alacak":"Hesap Bakiyesi"):"Toplam Bakiye");$("sb").textContent=KK?fmt(Math.max(0,dSig(KA))):fmt(tot);{const A=S.accs.find(a=>a.id===filt);let lbl,val,col;
- if(filt&&A){const v=dSig(A);if(v<-0.005){lbl="Artı Bakiye";val="+"+fmt(-v);col="var(--ac)"}else{lbl="Güncel Borç";val=fmt(Math.max(0,v));col=v>0.005?"var(--rd)":"var(--mu)"}}
+ $("sbl").textContent=KK?"Güncel Bakiye":(filt?(isB(filt)?"Toplam Alacak":"Hesap Bakiyesi"):"Toplam Bakiye");$("sb").textContent=KK?fmt(-dSig(KA)):fmt(tot);$("sb").style.color=KK?((-dSig(KA))>0.005?"#0f8a63":(dSig(KA)>0.005?"#d92d20":"")):"";{const A=S.accs.find(a=>a.id===filt);let lbl,val,col;
+ if(filt&&A){const v=dSig(A);{const bv=-v;lbl="Güncel Bakiye";val=fmt(bv);col=bv>0.005?"#0f8a63":(bv<-0.005?"#d92d20":"var(--mu)")}}
  else{const td=S.accs.reduce((x,a)=>x+debtOf(a),0),sp=S.accs.reduce((x,a)=>x+Math.max(0,-dSig(a)),0);if(td<0.005&&sp>0.005){lbl="Toplam Artı Bakiye";val="+"+fmt(sp);col="var(--ac)"}else{lbl="Toplam Borç";val=fmt(td);col=td>0?"var(--rd)":"var(--mu)"}}
  $("sbd").innerHTML=KK?`<span>Hareket toplamı</span><b style="color:var(--mu)">${fmt(tot)}</b>`:filt&&isB(filt)?"":`<span>${lbl}</span><b style="color:${col}">${val}</b>`}$("sb").className="sv"+((KK?dSig(KA)>0.005:tot<0)?" r":"");
  let h=[...S.accs].sort((x,y)=>(isK(x.id)?1:0)-(isK(y.id)?1:0)).filter(a=>!filt||a.id===filt).map(a=>editing===a.id?`<div class="acc">${accForm(a)}</div>`:`<div class="acc${bkOf(a)?" bk":""}"${bkOf(a)?` style="--bk:${bkOf(a)};--bk2:${shade(bkOf(a))};--bkt:${ptxt(bkOf(a))}"`:""}><div class="t">${a.logo?`<div class="ic lg"><img src="${a.logo}" alt=""></div>`:`<div class="ic">${icon(a.type)}</div>`}<div><b>${esc(a.name)}</b><small>${esc(a.type)}</small>${a.open?`<small>Açılış: ${fmt(a.open)}</small>`:""}</div><div class="ab"><button class="ib" data-e="${a.id}" title="Düzenle"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="ib" data-d="${a.id}" title="Sil"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div></div>${a.iban?`<div class="ibn"><div class="ibl"><span><b style="font-family:system-ui,sans-serif">IBAN</b> TR${esc(ibnNum(a))}</span><div class="ibb"><button class="cpb" data-cp="${a.id}" title="IBAN rakamlarını kopyala">⧉ Kopyala</button><button class="cpb" data-qr="${a.id}" title="Karekodu göster">▦ QR</button></div></div></div>`:""}${a.type==="Borçlu"?`<div class="debt" style="border:0;margin-top:14px"><span>Toplam Alacak</span><b style="color:var(--ac);font-size:18px">${fmt(alacakOf(a.id))}</b></div>`:`<div class="bal" style="color:${bal(a.id)<0?"var(--rd)":"var(--ac)"}">${fmt(bal(a.id))}</div>${isK(a.id)?ccPanel(a):limHtml(a)}${debtBox(a)}`}</div>`).join("");
@@ -1995,7 +1995,7 @@ function bAct(a,id,k){const D=S.debts;
   const total=f("bt"),rem=g("br")===""?total:f("br");
   const o={name:n,cred:g("bc").trim(),total:Math.max(total,rem),rem,monthly:f("bm"),left:Math.round(f("bl")),day:g("bd").trim(),rate:f("bf")};
   const ac=+g("bac"),d0=typeof bForm==="number"?D.find(x=>x.id===bForm):null;if(ac){o.acc=ac;o.linkFrom=d0&&d0.acc===ac&&d0.linkFrom?d0.linkFrom:bDate()}else{o.acc=0;o.linkFrom=""}
-  if(typeof bForm==="number"){const d=D.find(x=>x.id===bForm);if(d)Object.assign(d,o)}else D.push({id:S.nid++,log:[],cr:bDate(),...o});
+  if(typeof bForm==="number"){const d=D.find(x=>x.id===bForm);if(d)Object.assign(d,o)}else D.push({id:S.nid++,log:[],...o});
   bForm=null;save()}
  else if(a==="del"){if(bDelPend===id){S.debts=D.filter(x=>x.id!==id);bDelPend=null;save()}else bDelPend=id}
  else if(a==="pay"){bPay=bPay===id?null:id;bForm=null}
@@ -2042,81 +2042,6 @@ const remOf=d=>{const la=lkAcc(d);if(la)return debtOf(la);let r=d.rem||0;if(d.ac
 const tOf=d=>Math.max(d.total||0,remOf(d));
 function spendForm(dl){if(!bSpend)return"";if(!dl.length)return `<div class="bfm"><div class="bft">Harcama Ekle</div><div class="empty">Önce bir borç (örneğin kredi kartı) eklemelisiniz.</div></div>`;
  return `<div class="bfm"><div class="bft">Harcama Ekle</div><div class="bfg"><select id="bsx">${dl.map(d=>`<option value="${d.id}" ${bSpend===d.id?"selected":""}>${esc(d.name)}</option>`).join("")}</select><input id="bsa" type="text" inputmode="decimal" autocomplete="off" step="0.01" placeholder="Harcama tutarı (₺)"><input id="bsd" type="date" value="${bDate()}"><input id="bsn" placeholder="Açıklama (örn. market)"></div><div class="bfb"><button class="save" data-ba="spendok" data-bi="0">Harcamayı Ekle</button><button class="sm" data-ba="cancel" data-bi="0" style="border-radius:10px;padding:12px 18px">Vazgeç</button></div></div>`}
-let bYM=null,bYD=null;function bYm(i){bYM=i<0?null:i;bYD=null;renderB()}function bYd(k){bYD=bYD===k?null:k;renderB()}
-function yearChartHtml(Y,totNow,alNow){
- const now=new Date(),nowY=now.getFullYear(),nowM=now.getMonth(),nowD=now.getDate();
- const n=Y<nowY?12:(Y===nowY?nowM+1:0);
- if(!n)return `<div class="card" style="margin-top:12px"><div class="empty">${Y} yılı henüz başlamadı</div></div>`;
- const accs=S.accs.filter(a=>a.type!=="Borçlu"),tx={};accs.forEach(a=>{tx[a.id]=S.tx.filter(t=>t.acc===a.id)});
- const bacs=S.accs.filter(a=>a.type==="Borçlu");
- const z=x=>String(x).padStart(2,"0");
- const dHist=(d,ds)=>{const la=lkAcc(d);if(la&&S.accs.some(x=>x.id===la.id&&x.type!=="Borçlu"))return debtAcc(la,ds,tx);
-  if(d.cr&&ds<d.cr)return 0;
-  const L=(d.log||[]).filter(l=>!l.pre);
-  const sh=L.reduce((q,l)=>q+(l.t==="h"?l.a:0),0),so=L.reduce((q,l)=>q+(l.t==="h"?0:l.a),0);
-  let r=(d.rem||0)-sh+so;
-  L.forEach(l=>{if(l.d<=ds)r+=l.t==="h"?l.a:-l.a});
-  return Math.max(0,r)};
- const bAt=ds=>(S.debts||[]).reduce((q,d)=>q+dHist(d,ds),0);
- const aAt=ds=>Math.max(0,bacs.reduce((q,a)=>q+(a.open||0)-S.tx.filter(t=>t.acc===a.id&&t.date<=ds).reduce((x,t)=>x+(t.kind==="gelir"?t.amt:-t.amt),0),0));
- const sel=(typeof bYM==="number"&&bYM>=0&&bYM<n)?bYM:null;
- const W=680,H=260,P={l:44,r:16,t:20,b:28},iw=W-P.l-P.r,ih=H-P.t-P.b;
- const RED="#e34948",BLUE="#2a78d6",GREEN="#1baf7a";
- const col=(a,b)=>b>a+0.005?RED:BLUE;
- const f=v=>v.toFixed(1);
- const txt=(x,y,anchor,size,fill,t)=>`<text style="font-weight:400;stroke:none" x="${f(x)}" y="${f(y)}" text-anchor="${anchor}" font-size="${size}" fill="${fill}">${t}</text>`;
- let B=[],A=[],xl=[],xs=10,title;
- if(sel===null){
-  for(let m=0;m<n;m++){const ds=Y+"-"+z(m+1)+"-"+z(new Date(Y,m+1,0).getDate());B.push(bAt(ds));A.push(aAt(ds));xl.push(AY[m].slice(0,3))}
-  if(Y===nowY&&n>0){B[n-1]=totNow;A[n-1]=alNow}
-  title=`${Y} yılı borç ve alacak`;
- }else{
-  const last=(Y===nowY&&sel===nowM)?nowD:new Date(Y,sel+1,0).getDate();
-  for(let k=1;k<=last;k++){const ds=Y+"-"+z(sel+1)+"-"+z(k);B.push(bAt(ds));A.push(aAt(ds));xl.push(String(k))}
-  if(Y===nowY&&sel===nowM&&last>0){B[last-1]=totNow;A[last-1]=alNow}
-  xs=9;title=`${Y} ${AY[sel]} borç ve alacak`;
- }
- const btn=(i,label,on,dis)=>`<button class="sm" ${dis?"disabled":""} onclick="bYm(${i})" style="${on?"background:var(--ac);color:#fff;border-color:var(--ac);font-weight:500;":""}${dis?"opacity:.4;":""}">${label}</button>`;
- const monthBtns=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px">${AY.slice(0,12).map((mn,i)=>btn(i,mn.slice(0,3),sel===i,i>=n)).join("")}${btn(-1,"Tümü",sel===null,false)}</div>`;
- const head=`<div class="bt"><h2>${title}</h2></div>`;
- const N=B.length;
- const s0=B.findIndex((v,i)=>v>0.005||A[i]>0.005);
- if(s0<0)return `<div class="card" style="margin-top:12px">${head}${monthBtns}<div class="empty">Bu dönemde borç veya alacak kaydı yok</div></div>`;
- const mx=Math.max(1,...B,...A)*1.15;
- const X=i=>P.l+(N>1?i*(iw/(N-1)):iw/2),Y2=v=>P.t+ih-(v/mx)*ih;
- let xls="",fill="",seg="",alp="",dots="";
- for(let i=0;i<N;i++)xls+=txt(X(i),H-8,"middle",xs,"var(--mu)",xl[i]);
- for(let i=s0;i<N-1;i++){const c=col(B[i],B[i+1]);
-  fill+=`<polygon points="${f(X(i))},${f(Y2(0))} ${f(X(i))},${f(Y2(B[i]))} ${f(X(i+1))},${f(Y2(B[i+1]))} ${f(X(i+1))},${f(Y2(0))}" fill="${c}" fill-opacity="0.18" stroke="none"/>`;
-  seg+=`<line x1="${f(X(i))}" y1="${f(Y2(B[i]))}" x2="${f(X(i+1))}" y2="${f(Y2(B[i+1]))}" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>`}
- alp=`<polyline fill="none" stroke="${GREEN}" stroke-width="1.5" stroke-linejoin="round" points="${A.map((v,i)=>i<s0?"":f(X(i))+","+f(Y2(v))).filter(Boolean).join(" ")}"/>`;
- for(let i=s0;i<N;i++){const c=i===s0?BLUE:col(B[i-1],B[i]);
-  dots+=`<circle cx="${f(X(i))}" cy="${f(Y2(B[i]))}" r="2.5" style="fill:${c};stroke:none"/>`+txt(X(i),Y2(B[i])-8,"middle",xs,c,Math.round(B[i]/1000));
-  alp+=`<circle cx="${f(X(i))}" cy="${f(Y2(A[i]))}" r="2" style="fill:${GREEN};stroke:none"/>`+txt(X(i),Y2(A[i])+14,"middle",xs,GREEN,Math.round(A[i]/1000))}
- let hit="",dayCard="";
- if(sel!==null){
-  for(let i=0;i<N;i++)hit+=`<circle cx="${f(X(i))}" cy="${f(Y2(B[i]))}" r="11" style="fill:transparent;stroke:none;cursor:pointer" onclick="bYd(${i+1})"/>`;
-  if(bYD!=null&&bYD>=1&&bYD<=N){
-   const k=bYD,ds=Y+"-"+z(sel+1)+"-"+z(k);
-   const prevB=k>1?B[k-2]:(()=>{const pd=new Date(Y,sel,0);return bAt(pd.getFullYear()+"-"+z(pd.getMonth()+1)+"-"+z(pd.getDate()))})();
-   const ch=B[k-1]-prevB;
-   const ev=[];
-   (S.debts||[]).forEach(d=>{const la=lkAcc(d);
-    if(la&&S.accs.some(x=>x.id===la.id&&x.type!=="Borçlu")){
-     S.tx.filter(t=>t.acc===la.id&&t.date===ds).forEach(t=>ev.push({s:t.kind==="gider"?"+":"-",a:t.amt,w:(t.kind==="gider"?"Harcama":"Ödeme")+" • "+esc(accName(la.id))+(t.desc?" • "+esc(t.desc):""),c:t.kind==="gider"?RED:BLUE}));
-    }else{(d.log||[]).forEach(l=>{if(!l.pre&&l.d===ds)ev.push({s:l.t==="h"?"+":"-",a:l.a,w:(l.t==="h"?"Harcama":"Ödeme")+" • "+esc(d.name)+(l.n?" • "+esc(l.n):""),c:l.t==="h"?RED:BLUE})})}
-   });
-   bacs.forEach(a=>S.tx.filter(t=>t.acc===a.id&&t.date===ds).forEach(t=>ev.push({s:t.kind==="gider"?"+":"-",a:t.amt,w:(t.kind==="gider"?"Borç verildi":"Tahsilat")+" • "+esc(a.name)+(t.desc?" • "+esc(t.desc):""),c:GREEN})));
-   const chTxt=ch>0.005?`<span style="color:${RED}">▲ +${fmt(ch)} arttı</span>`:ch<-0.005?`<span style="color:${BLUE}">▼ ${fmt(ch)} azaldı</span>`:`<span style="color:var(--mu)">Değişmedi</span>`;
-   const rows=ev.length?ev.map(e=>`<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--bd)"><span>${e.w}</span><b style="color:${e.c};white-space:nowrap">${e.s}${fmt(e.a)}</b></div>`).join(""):`<div style="font-size:13px;color:var(--mu);padding:6px 0">Bu gün kayıtlı hareket yok</div>`;
-   dayCard=`<div style="margin-top:12px;padding:12px;border:1px solid var(--bd);border-radius:12px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px"><b style="font-size:14px">${k} ${AY[sel]} ${Y}</b><span style="font-size:12px">${chTxt}</span></div><div style="font-size:12px;color:var(--mu);margin-bottom:6px">Gün sonu borç: <b>${fmt(B[k-1])}</b></div>${rows}</div>`;
-  }
- }
- const start=B[s0],lastV=B[N-1],dl=lastV-start;
- const startLbl=sel===null?"İlk veri ayı borç":"Dönem başı borç";
- const sumTxt=`${startLbl}: <b>${fmt(start)}</b> · Son borç: <b>${fmt(lastV)}</b> · Değişim: <b style="color:${dl>0.005?RED:dl<-0.005?BLUE:"var(--mu)"}">${dl>0?"+":""}${fmt(dl)}</b> · Son alacak: <b style="color:${GREEN}">${fmt(A[N-1])}</b>`;
- return `<div class="card" style="margin-top:12px">${head}${monthBtns}<div style="font-size:12px;color:var(--mu);margin-bottom:8px">${sumTxt}</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="${title} grafiği">${xls}${fill}${seg}${alp}${dots}${hit}</svg><div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mu);margin-top:6px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${RED};margin-right:4px"></i>Borç arttı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${BLUE};margin-right:4px"></i>Borç azaldı</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${GREEN};margin-right:4px"></i>Alacak</span><span>Değerler bin ₺</span></div>${dayCard}</div>`;
-}
 function renderB(){const root=$("pgB");if(!root)return;
  const T=new Date(),Y=T.getFullYear(),MO=T.getMonth(),TD=T.getDate();
  const accs=S.accs.filter(a=>a.type!=="Borçlu"),tx={};accs.forEach(a=>{tx[a.id]=S.tx.filter(t=>t.acc===a.id)});
@@ -2181,7 +2106,7 @@ function renderB(){const root=$("pgB");if(!root)return;
  const acards=items.map(it=>it.open?`<div class="bdc"><div class="bdh"><div class="aprh"><div class="apav">•</div><div class="apn"><b>Açılış alacağı</b><small>${esc(it.a.name)} • Kişiye bağlanmamış tutar</small></div></div><div class="bdb"><button class="ib" data-ba="pedit" data-bi="0" data-bk="O|${it.a.id}" title="Açılış alacağını düzenle"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><button class="ib" data-ba="odel" data-bi="${it.a.id}" title="Açılış alacağını sil">${bDelM==="O|"+it.a.id?`<small style="color:var(--rd);font-weight:700">Sil?</small>`:'<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>'}</button></div></div><div class="bdv ok">${fmt(it.a.open)}<small>kalan alacak</small></div>${bPE==="O|"+it.a.id?`<div class="bpay"><input id="bpo" type="text" inputmode="decimal" autocomplete="off" step="0.01" value="${it.a.open}"><div class="apb"><button class="save" data-ba="oesave" data-bi="${it.a.id}" style="margin:0;flex:1">Kaydet</button><button class="sm" data-ba="pecancel" data-bi="0">Vazgeç</button></div></div>`:""}</div>`:prow(it.a,it.q)).join("");
  const accSum=bacs.map(a=>`${esc(a.name)}: <b>${fmt(alacakOf(a.id))}</b>`).join(" • ");
  h+=`<div class="bsec green">ALACAKLARIM <button class="sm" data-ba="lend" data-bi="0" style="margin-left:auto">⊕ Borç Verdim</button></div>${lendF}${acards?`<div class="bsub" style="margin:0 0 10px">${accSum}</div><div class="bdgrid">${acards}</div>`:`<div class="card"><div class="empty">Henüz borç verdiğiniz kimse yok.<br><small>"Borç Verdim" ile kişi ve tutar ekleyin. Kayıt, "Borçlu" türünde bir hesaba yazılır ve Cüzdan sekmesinde de görünür.</small></div></div>`}`;
- h+=yearChartHtml(Y,total,alT);root.innerHTML=h}
+ root.innerHTML=h}
 
 /* ===== FUZUL EV SAYFASI ===== */
 const FZ_AY=["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
@@ -3254,7 +3179,7 @@ const KB=[
 {id:"ozet",t:"Üstteki renkli kutular ne anlama geliyor?",k:["kutu","ozet","anlama gel","bu ay net","toplam bakiye","bakiye ne","yesil kirmizi","renkli","net ne"],
  s:["<b>Yeşil · Bu Ay Gelir:</b> seçili ayda kazandıkların.","<b>Kırmızı · Bu Ay Gider:</b> seçili ayda harcadıkların.","<b>Mavi · Bu Ay Net:</b> gelir eksi gider.","<b>Turuncu · Toplam Bakiye:</b> tüm hesapların toplamı, altında toplam borç."],img:[home(["kpi"])],tip:"Net eksi ise o ay gelirinden fazla harcamışsın demektir.",go:[["Cüzdan sayfasını aç",tab("w")]],rel:["kart","kategori"]},
 {id:"kart",t:"Kart ve kredi borcumu nasıl takip ederim?",k:["borc takip","kart borcu","kredi borcu","toplam borc","gunluk borc","guncel borc","borcum ne kadar","borc ne kadar","f4"],
- s:["Hesap kartlarındaki <b>Güncel Borç</b> satırı her kartın borcunu gösterir.","<b>F4 · Günlük Toplam Borç</b> ile borcun gün gün nasıl değiştiğini gör.","Kartla harcama yapınca borç artar; ödeme (gelir/transfer) girince azalır."],img:[home(["f4"])],tip:"Üstteki turuncu kutuda <b>Toplam Borç</b> da yazar.",go:[["Günlük Borç'u aç",kb("Günlük Toplam")]],rel:["odemeler","borcalacak"]},
+ s:["Hesap kartlarındaki <b>Güncel Bakiye</b> satırı her kartın durumunu gösterir: eksi ve kırmızıysa borç, artı ve yeşilse fazla ödeme.","<b>F4 · Günlük Toplam Borç</b> ile borcun gün gün nasıl değiştiğini gör.","Kartla harcama yapınca borç artar; ödeme (gelir/transfer) girince azalır."],img:[home(["f4"])],tip:"Üstteki turuncu kutuda <b>Toplam Borç</b> da yazar.",go:[["Günlük Borç'u aç",kb("Günlük Toplam")]],rel:["odemeler","borcalacak"]},
 {id:"kategori",t:"Hangi kategoriye ne kadar harcadım?",k:["kategori","kategoriye gore","nereye harcadim","dokum","f5","f6","kategori bazinda","dagilim"],
  s:["<b>F5 · Kategori Bazında Giderler</b> butonuna bas: harcamaların kategoriye göre dökümü açılır.","Gelirler için <b>F6</b>'yı kullan.","Grafikli görünüm için <b>Raporlar</b> sekmesine bak."],img:[home(["f5","f6"])],tip:"Gider eklerken doğru kategori seçmek raporları doğru yapar.",go:[["Kategori giderlerini aç",kb("Kategori Bazında Giderler")],["Raporlar'ı aç",tab("r")]],rel:["rapor","butce"]},
 {id:"odemeler",t:"Ödemeler sayfası nasıl kullanılır?",k:["odemeler","odeme sayfasi","aylik odeme","taksit","fatura takip","odeme ekle","odendi","odeme tablosu","kredi karti odeme"],
